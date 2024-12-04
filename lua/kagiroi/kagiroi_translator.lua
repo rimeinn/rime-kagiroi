@@ -101,7 +101,6 @@ function hiragana_trie:collect(text)
     return result
 end
 
-
 local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
 local kHenkan = false
@@ -187,7 +186,7 @@ function Top.func(input, seg, env)
     end
 end
 
-function Top.henkan(hiragana_cand,env)
+function Top.henkan(hiragana_cand, env)
     local a = env.hiragana_trie
     if not a then
         return
@@ -213,7 +212,7 @@ function Top.henkan(hiragana_cand,env)
     end
 end
 
-function Top.muhenkan(hiragana_cand,env)
+function Top.muhenkan(hiragana_cand, env)
     local hiragana_str = hiragana_cand.text
     local hiragana_simp_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end, hiragana_str, "")
     hiragana_simp_cand.preedit = hiragana_str
@@ -223,7 +222,8 @@ function Top.muhenkan(hiragana_cand,env)
     katakana_cand.preedit = katakana_str
     yield(katakana_cand)
     local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(hiragana_str)
-    local katakana_halfwidth_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end, katakana_halfwidth_str, "")
+    local katakana_halfwidth_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end,
+        katakana_halfwidth_str, "")
     katakana_halfwidth_cand.preedit = katakana_halfwidth_str
     yield(katakana_halfwidth_cand)
 end
@@ -232,7 +232,8 @@ end
 function Top.lex2cand(hcand, lex, env, comment)
     local dest_hiragana_str = lex.surface
     local end_with_sokuon = kagiroi.utf8_sub(dest_hiragana_str, -1) == "っ"
-    local end_with_single_n = kagiroi.utf8_sub(dest_hiragana_str, -1) == "ん" and (hcand.preedit:sub(-2) == " n" or hcand.preedit == "n")
+    local end_with_single_n = kagiroi.utf8_sub(dest_hiragana_str, -1) == "ん" and
+                                  (hcand.preedit:sub(-2) == " n" or hcand.preedit == "n")
     if hcand.text == dest_hiragana_str then
         local new_entry = DictEntry(hcand:to_phrase().entry)
         new_entry.text = lex.candidate
@@ -240,12 +241,12 @@ function Top.lex2cand(hcand, lex, env, comment)
         new_entry.comment = comment
         if env.preedit_view == "hiragana" then
             new_entry.preedit = dest_hiragana_str
-            if end_with_single_n then 
+            if end_with_single_n then
                 new_entry.preedit = new_entry.preedit:gsub("ん$", "n")
             end
         elseif env.preedit_view == "katakana" then
             new_entry.preedit = env.hira2kata_opencc:convert(dest_hiragana_str) or dest_hiragana_str
-            if end_with_single_n then 
+            if end_with_single_n then
                 new_entry.preedit = new_entry.preedit:gsub("ン$", "n")
             end
         elseif env.preedit_view == "inline" then

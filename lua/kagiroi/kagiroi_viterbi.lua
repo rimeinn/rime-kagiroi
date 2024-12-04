@@ -1,8 +1,8 @@
 -- kagiroi_viterbi.lua
--- Maintain a lattice for viterbi algorithm
+-- maintain a lattice for viterbi algorithm
 -- to offer contextual candidates.
 
--- License: GPLv3
+-- license: GPLv3
 -- version: 0.1.0
 -- author: kuroame
 
@@ -72,8 +72,8 @@ local Lattice = {
     -- section means a group of nodes of same surface_len
     -- format: begin_nodes_section_rear[pos][end_pos]
     begin_nodes_section_rear = {},
-     -- nodes that start at 1
-     -- format:prefix_nodes[surface_len]
+    -- nodes that start at 1
+    -- format:prefix_nodes[surface_len]
     prefix_nodes = {},
     end_nodes = {}, -- nodes that end at i
     -- best previous node and cost(ends at i) 
@@ -302,7 +302,7 @@ function Lattice:connect(pos)
             node = best_prev_node,
             cost = best_cost - cur_node.cost
         }
-        
+
         -- update the node
         cur_node.prev = best_prev_node
         cur_node.cost = best_cost
@@ -334,7 +334,6 @@ function Lattice:connect(pos)
             self.end_nodes[self.input_len_in_utf8 + 1] = cur_node
             -- log.info("update end_nodes at pos: " .. self.input_len_in_utf8 + 1 .. " with node: " .. cur_node.candidate.. "|" .. cur_node.type)
         end
-        
 
         ::continue::
         local next_node = cur_node.bnext_iter()
@@ -356,7 +355,6 @@ function Lattice:connect(pos)
         cur_node = next_node
     end
 end
-
 
 -- get the best sentence
 function Lattice:best_sentence()
@@ -389,14 +387,14 @@ end
 -- returns an iterator that yields nodes in the ascending order of lengh of the surface, then cost
 function Lattice:best_n_phrase(n)
     local cur_len = self.input_len_in_utf8
-    local current_index = 1 
+    local current_index = 1
     return function()
         while cur_len > 0 do
             local cur_nodes = self.prefix_nodes[cur_len]
             if cur_nodes and #cur_nodes > 0 then
                 if current_index <= #cur_nodes then
                     local node = cur_nodes[current_index]
-                    current_index = current_index + 1 
+                    current_index = current_index + 1
                     return node
                 else
                     cur_len = cur_len - 1

@@ -21,9 +21,11 @@ function Module.load()
     local lex_count = Module._get_lex_count()
     if lex_count <= 0 then
         log.info("Loading lex.csv...")
-        Module._load_lex_file(rime_api.get_user_data_dir()..pathsep.."lua" .. pathsep .. "kagiroi" .. pathsep .. "dic" .. pathsep .. "lex.csv")
+        Module._load_lex_file(rime_api.get_user_data_dir() .. pathsep .. "lua" .. pathsep .. "kagiroi" .. pathsep ..
+                                  "dic" .. pathsep .. "lex.csv")
         log.info("Loading matrix.def...")
-        Module._load_matrix_file(rime_api.get_user_data_dir()..pathsep.."lua" .. pathsep .. "kagiroi" .. pathsep .. "dic" .. pathsep .. "matrix.def")
+        Module._load_matrix_file(rime_api.get_user_data_dir() .. pathsep .. "lua" .. pathsep .. "kagiroi" .. pathsep ..
+                                     "dic" .. pathsep .. "matrix.def")
         log.info("Data loaded.")
     end
     log.info("kagiroi lex count: " .. Module._get_lex_count())
@@ -170,7 +172,7 @@ function Module._load_lex_file(filePath)
                 error("Failed to update key: " .. key)
             end
 
-            lexCount = lexCount + 1 
+            lexCount = lexCount + 1
         end
     end
 

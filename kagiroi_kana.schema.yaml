@@ -8,7 +8,7 @@ switches:
     reset: 0
     states: [ あ, 英字 ]
   - name: full_shape
-    states: [半角, 全角 ]
+    states: [ 半角, 全角 ]
   - name: ascii_punct
     states: [ 。，, ．， ]
 
