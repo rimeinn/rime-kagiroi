@@ -1,0 +1,15 @@
+# Rime dictionary
+# encoding: utf-8
+# just a placeholder
+
+---
+name: kagiroi
+version: 20241204
+sort: by_weight
+columns:
+  - code
+  - text
+  - weight
+...
+
+placeholder	placeholder

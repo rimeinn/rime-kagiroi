@@ -1,0 +1,109 @@
+algebra:
+  gen_hebon_code:
+    __append:
+      # ti→chi、tya→cha
+      - derive/^(;?)t(?:(i)|y([aueo]))$/$1ch$2$3/
+      # zi→ji、zya→jya
+      - derive/^(;?)z(i|y[aiueo])$/$1j$2/
+      # hu→fu、hwa→fa
+      - derive/^(;?)h(?:(u)|w([aioe]))$/$1f$2$3/
+      # si→shi、sya→sha
+      - derive/^(;?)s(?:(i)|y([aueo]))$/$1sh$2$3/
+      # jya→ja
+      - derive/^(;?)jy([aueo])$/$1j$2/
+      # tu→tsu、xtu→xtsu
+      - derive/^(;?)(x?)tu$/$1$2tsu/
+      # lで始まるの小書き文字の対応
+      # 例：xa→la、xya→lya、xtsu→ltsu など
+      - derive/^(;?)x([a-z]{1,3})$/$1l$2/
+      # 促音のマーク「;」の転換
+      - xform/^;([a-z])(.+)$/$1$1$2/
+      # 撥音「ん」を「nn」で入力可能
+      - derive/^n$/nn/
+      # -を「q」で入力可能
+      - derive/^-$/q/
+translator:
+  kana_translator:
+    __patch:
+      dictionary: kagiroi_kana
+      enable_completion: false
+      enable_user_dict: false
+      enable_sentence: true
+
+key_bindings:
+  paging_with_minus_equal:
+    __append:
+      # - means Page_Up only when paging
+      - { when: paging, accept: minus, send: Page_Up }
+      - { when: has_menu, accept: equal, send: Page_Down }
+  kagiroi_swithes:
+    __append:
+      - { when: has_menu, accept: "Control+c", toggle: composition_mode}
+
+punctuator:
+  full_shape:
+    ' ' : { commit: '　' }
+    ',' : { commit: 、 }
+    '.' : { commit: 。 }
+    '<' : [ ＜, 〈,  《 ]
+    '>' : [ ＞, 〉, 》 ]
+    '/' : [ ・, …, /, ／, ÷]
+    '?' : { commit: ？ }
+    ';' : { commit: ； }
+    ':' : { commit: ： }
+    '''' : { pair: [ '‘', '’' ] }
+    '"' : { pair: [ '“', '”' ] }
+    '\' : [ ￥, ＼ ]
+    '|' : [ ·, ｜, '§', '¦' ]
+    '`' : ｀
+    '~' : [ 〜, ~ ]
+    '!' : { commit: ！ }
+    '@' : [ ＠, ☯ ]
+    '#' : [ ＃, ⌘ ]
+    '%' : [ ％, '°', '℃' ]
+    '$' : [　'$', '€', '£', '¥', '¢', '¤', ₩ ]
+    '^' : { commit: ＾}
+    '&' : ＆
+    '*' : [ ＊, ·, ・, ×, ※, ❂ ]
+    '(' : （
+    ')' : ）
+    '_' : ＿
+    '+' : ＋
+    '=' : [ ＝, 々, 〃 ]
+    '[' : [ 「, 【, 〔, ［, 〚, 〘 ]
+    ']' : [ 」, 】, 〕, ］, 〛, 〙 ]
+    '{' : [ 『, 〖, ｛ ]
+    '}' : [ 』, 〗, ｝ ]
+  half_shape:
+    ' ' : { commit: '　' } # comment out this line to disable full-width space
+    ',' : [ 、, ・, ，,]
+    '.' : [ 。, …, ．, . ]
+    '<' : [ ＜, 〈,  《 ]
+    '>' : [ ＞, 〉, 》 ]
+    '/' : [ ・, /, ／ ]
+    '?' : { commit: ？ }
+    ';' : { commit: ； }
+    ':' : { commit: ： }
+    '''' : { pair: [ '‘', '’' ] }
+    '"' : { pair: [ '“', '”' ] }
+    '\' : [ ￥, '\', ＼ ]
+    '|' : [ ·, ・, '|', ｜, '§', '¦', '‖', ︴ ]
+    '`' : [ '`', ‵, ‶, ‷, ′, ″, ‴, ⁗ ]
+    '~' : [ ～, '~', ˜, ˷, ⸯ, ≈, ≋, ≃, ≅, ≇, ∽, ⋍, ≌, ﹏, ﹋, ﹌, ︴ ]
+    '!' : { commit: ！ }
+    '@' : [ '@', ©, ®, ℗ ]
+    '#' : [ '#', № ]
+    '%' : [ '%', ％, '°', '℃', ‰, ‱, ℉, ℅, ℆, ℀, ℁, ⅍ ]
+    '$' : [ '$', '€', '£', '¥', '¢', '¤', ₩ ]
+    '^' : { commit: ＾}
+    '&' : '&' 
+    '*' : [ '*', ＊, ·, ・, ×, ※, ❂, ⁂, ☮, ☯, ☣ ]
+    '(' : （
+    ')' : ）
+    '_' : ＿
+    '+' : '+'
+    '=' : [ '=', 々, 〃 ]
+    '[' : [ 「, 【, 〔, ［, 〚, 〘 ]
+    ']' : [ 」, 】, 〕, ］, 〛, 〙 ]
+    '{' : [ 『, 〖, ｛ ]
+    '}' : [ 』, 〗, ｝ ]

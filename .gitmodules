@@ -1,0 +1,3 @@
+[submodule "mozc"]
+	path = mozc
+	url = git@github.com:google/mozc.git

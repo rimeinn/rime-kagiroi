@@ -1,0 +1,70 @@
+schema:
+  schema_id: kagiroi
+  name: カギロイ
+  version: '20241204'
+  author:
+    - kuroame
+  description: |
+    スマートなローマ字日本語入力。
+  dependencies:
+    - kagiroi_kana
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ あ, 英字 ]
+  - name: composition_mode
+    states: [ 変換, 無変換 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  processors:
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - lua_translator@*kagiroi/kagiroi_translator
+  filters:
+    - uniquifier
+
+speller:
+  alphabet: abcdefghijklmnopqrstuvwxyz-;
+  delimiter: " '"
+  algebra:
+    __patch:
+      - kagiroi:/algebra/gen_hebon_code
+
+translator:
+  dictionary: kagiroi
+  enable_user_dict: true
+
+punctuator:
+  __patch:
+    - kagiroi:/punctuator
+
+recognizer:
+  import_preset: default
+
+kagiroi:
+  preedit_view: hiragana # hiragana katakana romaji inline
+
+key_binder:
+  bindings:
+    __patch:
+      - kagiroi:/key_bindings/paging_with_minus_equal
+      - kagiroi:/key_bindings/kagiroi_swithes
