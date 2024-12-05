@@ -21,7 +21,7 @@ Rimeについては
 ![](misc/example.png)
 
 # 依存
-- librime >= 1.12.0
+- librime >= 1.11.2
 - librime-lua plugin
 
 # ライセンス
