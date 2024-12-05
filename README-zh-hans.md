@@ -12,6 +12,36 @@
 # 用例
 ![](misc/example.png)
 
+<div style="padding: 10px; border: 1px solid #00f; background-color: #e7f3ff; color: #00529b; margin-bottom: 15px;">
+  💡 <strong>提示:</strong> 得益于Rime强大的配置能力，你可以在其他方案中使用本方案作为辅助输出，这可以通过与affix_segmentor的配合实现，以下配置仅作为参考。
+</div>
+
+
+```yaml
+
+  # 在xxx.custom.yaml中，xxx为你的主方案
+  schema/depenencies/+:
+    - kagiroi
+  engine/segmentors/@before 3: affix_segmentor@kagiroi # 这里要注意顺序，需保证在abc_segmentor前面
+  engine/translators/+:
+    - lua_translator@*kagiroi/kagiroi_translator
+  kagiroi:
+    prefix: ok # 引导前缀，可修改，如有修改，下面的pattern也需要同步改
+    tips: 〔火光〕 # 提示符，可修改 （火光（カギロイ/Glimmer）来自Xenoblade3，レックス(Rex)和ホムラ(Pyra)女儿的名字(大概)）
+    tag: kagiroi
+  recognizer/patterns/kagiroi: '(^ok[a-z\-]*$)'
+
+  # 在kagiroi方案中-和q都可以用来输入长音
+  # 作为辅助方案时，使用-输出长音需要以下额外的步骤：
+  # 1. 需要将-添加到alphabet中
+  speller/alphabet: ...-; #在原来的基础上加-即可
+  # 2. 需要修改-的翻页功能
+  # 默认的key_bindings.yaml中，-被用作翻页键
+  # 找到 - { when: has_menu, accept: minus, send: Page_Up } 将has_menu改为paging, 这样只有在进入paging状态后，-才会向前翻页
+  # 也可以在key_bindings.custom.yaml通过patch方式修改（更好）
+
+```
+
 # 依赖
 - librime >= 1.12.0
 - librime-lua plugin
