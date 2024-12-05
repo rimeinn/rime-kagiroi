@@ -63,6 +63,10 @@ recognizer:
 kagiroi:
   preedit_view: hiragana # hiragana katakana romaji inline
 
+abc_segmentor:
+  extra_tags:
+    - kagiroi
+
 key_binder:
   bindings:
     __patch:
