@@ -103,4 +103,15 @@ function Module.insert_sorted(list, new_element, compare)
     table.insert(list, low, new_element)
 end
 
+function Module.find_nth_char(s, char, n)
+    local position = 0
+    for i = 1, n do
+        position = string.find(s, char, position + 1, true)
+        if not position then
+            return nil
+        end
+    end
+    return position
+end
+
 return Module

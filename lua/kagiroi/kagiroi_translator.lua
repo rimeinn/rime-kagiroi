@@ -1,7 +1,7 @@
 -- kagiroi_translator.lua
 -- main translator of kagiroi
 
--- License: GPLv3
+-- license: GPLv3
 -- version: 0.1.0
 -- author: kuroame
 
@@ -164,7 +164,7 @@ function Top.init(env)
 
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
 
-    env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "romaji"
+    env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "hiragana"
 end
 
 function Top.fini(env)
@@ -237,44 +237,41 @@ function Top.lex2cand(hcand, lex, env, comment)
     local end_with_sokuon = kagiroi.utf8_sub(dest_hiragana_str, -1) == "っ"
     local end_with_single_n = kagiroi.utf8_sub(dest_hiragana_str, -1) == "ん" and
                                   (hcand.preedit:sub(-2) == " n" or hcand.preedit == "n")
-    if hcand.text == dest_hiragana_str then
-        local new_entry = DictEntry(hcand:to_phrase().entry)
-        new_entry.text = lex.candidate
-        new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
-        new_entry.comment = comment
-        if env.preedit_view == "hiragana" then
-            new_entry.preedit = dest_hiragana_str
-            if end_with_single_n then
-                new_entry.preedit = new_entry.preedit:gsub("ん$", "n")
-            end
-        elseif env.preedit_view == "katakana" then
-            new_entry.preedit = env.hira2kata_opencc:convert(dest_hiragana_str) or dest_hiragana_str
-            if end_with_single_n then
-                new_entry.preedit = new_entry.preedit:gsub("ン$", "n")
-            end
-        elseif env.preedit_view == "inline" then
-            new_entry.preedit = lex.candidate
-            if end_with_single_n then
-                new_entry.preedit = new_entry.preedit:gsub("ん$", "n"):gsub("ン$", "n")
-            end
-        end
-        return Phrase(env.mem, "kagiroi", hcand.start, hcand._end, new_entry):toCandidate()
-    end
-    local entry_list = env.hiragana_trie:collect(dest_hiragana_str)
-    local entry_num = #entry_list
-    local vertices = hcand:spans().vertices
-    local start = vertices[1] or hcand.start
-    local _end
-    -- SPECIAL CASE: if the dest_hiragana_str end with っ, _end should be in the middle of sokuon
-    -- eg. 「a tta」 , _end should be at the first t to separate the tta to t|ta
-    if end_with_sokuon then
-        _end = vertices[entry_num] + 1
-    else
-        _end = vertices[entry_num + 1] or hcand._end
-    end
-    local new_entry = DictEntry()
 
     local preedit = ""
+    local start = hcand.start
+    local _end
+
+    if hcand.text == dest_hiragana_str then
+        _end = hcand._end
+        if env.preedit_view == "romaji" then
+            preedit = hcand.preedit
+        end
+    else
+        local entry_list = env.hiragana_trie:collect(dest_hiragana_str)
+        local syllable_num = #entry_list
+        -- SPECIAL CASE: if the dest_hiragana_str end with っ, _end should be in the middle of sokuon
+        -- eg. 「a tta」 , _end should be at the first t to separate the tta to t|ta
+        if end_with_sokuon then
+            _end = Top.find_end(hcand.preedit, hcand.start, hcand._end, syllable_num -1) + 1
+        else
+            _end = Top.find_end(hcand.preedit, hcand.start, hcand._end, syllable_num)
+        end
+        if env.preedit_view == "romaji" then
+            for word in string.gmatch(hcand.preedit, "%S+") do
+                if preedit == "" then
+                    preedit = word
+                else
+                    preedit = preedit .. " " .. word
+                end
+                syllable_num = syllable_num - 1
+                if syllable_num == 0 then
+                    break
+                end
+            end
+        end
+    end
+
     if env.preedit_view == "hiragana" then
         preedit = dest_hiragana_str
         if end_with_single_n and _end == hcand._end then
@@ -286,27 +283,32 @@ function Top.lex2cand(hcand, lex, env, comment)
             preedit = preedit:gsub("ン$", "n")
         end
     elseif env.preedit_view == "inline" then
-        new_entry.preedit = lex.candidate
+        preedit = lex.candidate
         if end_with_single_n then
-            new_entry.preedit = new_entry.preedit:gsub("ん$", "n"):gsub("ン$", "n")
-        end
-    else
-        for word in string.gmatch(hcand.preedit, "%S+") do
-            preedit = preedit .. " " .. word
-            entry_num = entry_num - 1
-            if entry_num == 0 then
-                break
-            end
+            preedit = preedit:gsub("ん$", "n"):gsub("ン$", "n")
         end
     end
+    
+    local new_entry = DictEntry()
     new_entry.preedit = preedit
-
     new_entry.text = lex.candidate
     -- just use hiragana str as custom code
     new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
     new_entry.comment = comment
-    -- log.info("start", start, "end", _end, "entry_num", entry_num)
     return Phrase(env.mem, "kagiroi", start, _end, new_entry):toCandidate()
+end
+
+-- find the end position for the candidate
+function Top.find_end(h_preedit, h_start, h_end, syllable_num)
+    if syllable_num <= 0 then
+        return h_start
+    end
+    local n = kagiroi.find_nth_char(h_preedit ," ", syllable_num)
+    if n then
+        return n - syllable_num + h_start
+    else
+        return h_end
+    end
 end
 
 -- translate romaji to hiragana

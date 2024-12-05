@@ -2,7 +2,7 @@
 -- load lex.csv and matrix.def data to LevelDB
 -- expose functions to query data
 
--- License: GPLv3
+-- license: GPLv3
 -- version: 0.1.0
 -- author: kuroame
 
