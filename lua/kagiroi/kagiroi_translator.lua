@@ -175,6 +175,9 @@ function Top.fini(env)
 end
 
 function Top.func(input, seg, env)
+    if env.tag ~= "" and not seg:has_tag(env.tag) then
+        return
+    end
     local hiragana_cand = Top.query_roma2hira_xlator(input, seg, env)
     local composition_mode = env.engine.context:get_option("composition_mode") or kHenkan
     if hiragana_cand then

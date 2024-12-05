@@ -29,6 +29,7 @@ translator:
       enable_completion: false
       enable_user_dict: false
       enable_sentence: true
+      tags: [abc, kagiroi]
 
 key_bindings:
   paging_with_minus_equal:
