@@ -121,7 +121,7 @@ function Top.init(env)
             local left_id, right_id, cost = string.match(dictentry.comment, "(%d+) (%d+) (%d+)")
             if left_id and right_id and cost then
                 local pentry = DictEntry(dictentry)
-                pentry.text = dictentry.text .. "|" .. left_id .. " " .. right_id .. " " .. cost
+                pentry.text = dictentry.text .. "|" .. left_id .. " " .. right_id .. " " .. "2500"
                 env.mem:update_userdict(pentry, 1, "")
             end
             return left_id, right_id, cost
