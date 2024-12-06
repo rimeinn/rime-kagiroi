@@ -197,6 +197,8 @@ end
 
 function Top.fini(env)
     env.mem:disconnect()
+    env.pseudo_xlator = nil
+    env.roma2hira_xlator = nil
     env.delete_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
