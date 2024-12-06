@@ -118,13 +118,11 @@ function Top.init(env)
     -- Update the user dict when our candidate is committed.
     env.mem:memorize(function(commit)
         local function save_phrase(dictentry)
-            local left_id, right_id, cost = string.match(dictentry.comment, "(%d+) (%d+) (%d+)")
-            if left_id and right_id and cost then
-                local pentry = DictEntry(dictentry)
-                pentry.text = dictentry.text .. "|" .. left_id .. " " .. right_id .. " " .. "2500"
-                env.mem:update_userdict(pentry, 1, "")
+            local text, left_id, right_id = string.match(dictentry.text, "(.+)|(%d+) (%d+)")
+            if text and left_id and right_id then
+                env.mem:update_userdict(dictentry, 1, "")
             end
-            return left_id, right_id, cost
+            return text, left_id, right_id
         end
         
         -- If the commit contains multiple entries, we consider it as a sentence
@@ -135,18 +133,18 @@ function Top.init(env)
             local sleft_id = -1
             local sright_id = -1
             for i, dictentry in ipairs(commit:get()) do
-                local left_id, right_id, cost = save_phrase(dictentry)
+                local text, left_id, right_id = save_phrase(dictentry)
                 if sleft_id == -1 and left_id then
                     sleft_id = left_id
                 end
                 if right_id then
                     sright_id = right_id
                 end
-                stext = stext .. dictentry.text
+                stext = stext .. text
                 scustom_code = scustom_code .. kagiroi.trim_trailing_space(dictentry.custom_code)
             end
             local sentry = DictEntry()
-            sentry.text = stext .. "|" .. sleft_id .. " " .. sright_id .. " " .. "5000"
+            sentry.text = stext .. "|" .. sleft_id .. " " .. sright_id
             sentry.custom_code = kagiroi.append_trailing_space(scustom_code)
             env.mem:update_userdict(sentry, 1, "")
         else
@@ -166,14 +164,14 @@ function Top.init(env)
             if not entry then
                 return nil
             end
-            local candidate, left_id, right_id, cost = string.match(entry.text, "(.+)|(%d+) (%d+) (%d+)")
-            if candidate and left_id and right_id and cost then
+            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
+            if candidate and left_id and right_id then
                 return {
                     surface = kagiroi.trim_trailing_space(entry.custom_code),
                     left_id = tonumber(left_id),
                     right_id = tonumber(right_id),
                     candidate = candidate,
-                    cost = tonumber(cost) / (entry.commit_count + 1)
+                    cost = 1000 / (entry.commit_count + 1)
                 }
             else
                 return {
@@ -227,16 +225,16 @@ function Top.henkan(hiragana_cand, env)
     viterbi.analyze(hiragana_text)
     -- firstly, find a best match for the whole input
     local best_sentence = viterbi.best()
-    yield(Top.lex2cand(hiragana_cand, best_sentence, env, nil))
+    yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
     -- secondly, send a "contextual" phrase candidate
     local prefix = best_sentence.prefix
-    yield(Top.lex2cand(hiragana_cand, prefix, env, nil))
+    yield(Top.lex2cand(hiragana_cand, prefix, env, ""))
     -- finally, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
     while true do
         local phrase = best_n()
         if phrase then
-            yield(Top.lex2cand(hiragana_cand, phrase, env, nil))
+            yield(Top.lex2cand(hiragana_cand, phrase, env, ""))
         else
             break
         end
@@ -319,15 +317,13 @@ function Top.lex2cand(hcand, lex, env, comment)
 
     local new_entry = DictEntry()
     new_entry.preedit = preedit
-    new_entry.text = lex.candidate
+    new_entry.text = lex.candidate .. "|" .. lex.left_id .. " " .. lex.right_id
     -- just use hiragana str as custom code
     new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
-    -- carry lex info in comment
-    new_entry.comment = lex.left_id .. " " .. lex.right_id .. " " .. lex.cost
     local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
     -- use a zero-width space to hide the comment
     -- cause inherit_comment won't work when it is set to false
-    return ShadowCandidate(new_cand, "kagiroi", new_cand.text, comment or "\xE2\x80\x8B")
+    return ShadowCandidate(new_cand, "kagiroi", lex.candidate, comment)
 end
 
 -- find the end position for the candidate
