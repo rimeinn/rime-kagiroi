@@ -236,11 +236,7 @@ function Top.henkan(hiragana_cand, env)
     while true do
         local phrase = best_n()
         if phrase then
-            local cand = Top.lex2cand(hiragana_cand, phrase, env,
-                phrase.left_id .. " " .. phrase.right_id .. " " .. phrase.cost)
-            -- use a zero-width space to hide the comment
-            -- cause inherit_comment won't work when it is set to false
-            yield(ShadowCandidate(cand, "kagiroi_phrase", cand.text, "\xE2\x80\x8B"))
+            yield(Top.lex2cand(hiragana_cand, phrase, env, ""))
         else
             break
         end
@@ -326,8 +322,12 @@ function Top.lex2cand(hcand, lex, env, comment)
     new_entry.text = lex.candidate
     -- just use hiragana str as custom code
     new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
-    new_entry.comment = comment
-    return Phrase(env.mem, "kagiroi", start, _end, new_entry):toCandidate()
+    -- carry lex info in comment
+    new_entry.comment = lex.left_id .. " " .. lex.right_id .. " " .. lex.cost
+    local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
+    -- use a zero-width space to hide the comment
+    -- cause inherit_comment won't work when it is set to false
+    return ShadowCandidate(new_cand, "kagiroi", new_cand.text, comment or "\xE2\x80\x8B")
 end
 
 -- find the end position for the candidate

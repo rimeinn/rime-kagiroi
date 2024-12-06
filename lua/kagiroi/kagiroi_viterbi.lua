@@ -366,6 +366,8 @@ function Lattice:best_sentence()
     local candidate = ""
     local surface = ""
     local prefix = nil
+    local left_id = prev.left_id
+    local right_id = prev.right_id
     while prev do
         candidate = prev.candidate .. candidate
         surface = prev.surface .. surface
@@ -374,12 +376,15 @@ function Lattice:best_sentence()
             break
         end
         prev = prev.prev
+        left_id = prev.left_id
     end
     return {
         surface = surface,
         candidate = candidate,
         cost = self.eos_node.cost,
-        prefix = prev
+        prefix = prev,
+        left_id = left_id,
+        right_id = right_id
     }
 end
 
