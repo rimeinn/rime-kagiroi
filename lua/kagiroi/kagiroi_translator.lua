@@ -207,6 +207,8 @@ function Top.func(input, seg, env)
         return
     end
     -- query pseudo translator to commit pending transaction
+    -- in the comming version of librime, we can use Memory:finish_session()
+    -- we use this workaround since most frontends have not been updated yet
     env.pseudo_xlator:query(input, seg)
     local hiragana_cand = Top.query_roma2hira_xlator(input, seg, env)
     local composition_mode = env.engine.context:get_option("composition_mode") or kHenkan

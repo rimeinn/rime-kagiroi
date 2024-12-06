@@ -52,6 +52,7 @@ speller:
 translator:
   dictionary: kagiroi
   enable_user_dict: true
+  tag: kagiroi
 
 punctuator:
   __patch:
