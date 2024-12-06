@@ -227,16 +227,16 @@ function Top.henkan(hiragana_cand, env)
     viterbi.analyze(hiragana_text)
     -- firstly, find a best match for the whole input
     local best_sentence = viterbi.best()
-    yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
+    yield(Top.lex2cand(hiragana_cand, best_sentence, env, nil))
     -- secondly, send a "contextual" phrase candidate
     local prefix = best_sentence.prefix
-    yield(Top.lex2cand(hiragana_cand, prefix, env, ""))
+    yield(Top.lex2cand(hiragana_cand, prefix, env, nil))
     -- finally, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
     while true do
         local phrase = best_n()
         if phrase then
-            yield(Top.lex2cand(hiragana_cand, phrase, env, ""))
+            yield(Top.lex2cand(hiragana_cand, phrase, env, nil))
         else
             break
         end
