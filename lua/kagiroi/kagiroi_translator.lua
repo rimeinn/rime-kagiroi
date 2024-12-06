@@ -317,12 +317,11 @@ function Top.lex2cand(hcand, lex, env, comment)
 
     local new_entry = DictEntry()
     new_entry.preedit = preedit
+    -- save the lex data in entry text
     new_entry.text = lex.candidate .. "|" .. lex.left_id .. " " .. lex.right_id
     -- just use hiragana str as custom code
     new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
     local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
-    -- use a zero-width space to hide the comment
-    -- cause inherit_comment won't work when it is set to false
     return ShadowCandidate(new_cand, "kagiroi", lex.candidate, comment)
 end
 
