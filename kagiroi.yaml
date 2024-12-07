@@ -3,6 +3,8 @@ algebra:
     __append:
       # ti→chi、tya→cha
       - derive/^(;?)t(?:(i)|y([aueo]))$/$1ch$2$3/
+      # tya→cya
+      - derive/^(;?)t(y[aiueo])$/$1c$2/
       # zi→ji、zya→jya
       - derive/^(;?)z(i|y[aiueo])$/$1j$2/
       # hu→fu、hwa→fa
