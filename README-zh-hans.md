@@ -8,7 +8,10 @@
 - 使用[Project Mozc](https://github.com/google/mozc)的词典及连接矩阵数据
 - 使用Viterbi算法对假名序列进行转换
 - 使用Rime Algebra支持多种罗马字拼写
-  
+
+# 安装
+℞ `pfeiwu/rime-kagiroi`
+
 # 用例
 ![](misc/example.png)
 

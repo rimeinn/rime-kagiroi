@@ -17,6 +17,9 @@ Rimeについては
 - Viterbiアルゴリズムで最適変換を
 - Rime Algebraでいろんなローマ字表記を支援
 
+# インストール
+℞ `pfeiwu/rime-kagiroi`
+
 # 使用例
 ![](misc/example.png)
 

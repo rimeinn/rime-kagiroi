@@ -10,8 +10,7 @@ install: clean build
 build: update_mozc $(MATRIX_DEF) $(LEX_CSV)
 
 update_mozc:
-	git submodule foreach git fetch origin
-	git submodule foreach git reset --hard origin/master
+	[ -d mozc ] && ( cd mozc ; git pull ) || git clone https://github.com/google/mozc/
 
 clean:
 	$(RM) lua/kagiroi/dic/*
