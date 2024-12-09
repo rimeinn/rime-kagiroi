@@ -39,7 +39,7 @@ key_bindings:
       # - means Page_Up only when paging
       - { when: paging, accept: minus, send: Page_Up }
       - { when: has_menu, accept: equal, send: Page_Down }
-  kagiroi_swithes:
+  kagiroi_switches:
     __append:
       - { when: has_menu, accept: "Control+c", toggle: composition_mode}
 
