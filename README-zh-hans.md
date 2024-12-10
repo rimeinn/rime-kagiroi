@@ -23,7 +23,7 @@
 ```yaml
 
   # 在xxx.custom.yaml中，xxx为你的主方案
-  schema/depenencies/+:
+  schema/dependencies/+:
     - kagiroi
   engine/segmentors/@before 3: affix_segmentor@kagiroi # 这里要注意顺序，需保证在abc_segmentor前面
   engine/translators/+:
