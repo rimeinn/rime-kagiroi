@@ -156,6 +156,20 @@ function Top.init(env)
         end
     end)
 
+    local function calculate_userdict_cost(surface, commit_count)
+        local base_cost = 5000
+        
+        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
+        
+        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
+        
+        local cost = math.max(
+            500,
+            base_cost * length_penalty / frequency_bonus
+        )
+        return math.floor(cost)
+    end
+
     -- Register the user dict to the viterbi thingy.
     viterbi.register_userdict(function(input)
         env.mem:user_lookup(input .. " \t", true)
@@ -166,17 +180,18 @@ function Top.init(env)
                 return nil
             end
             local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
+            local surface = kagiroi.trim_trailing_space(entry.custom_code)
             if candidate and left_id and right_id then
                 return {
-                    surface = kagiroi.trim_trailing_space(entry.custom_code),
+                    surface = surface,
                     left_id = tonumber(left_id),
                     right_id = tonumber(right_id),
                     candidate = candidate,
-                    cost = 1000 / (entry.commit_count + 1)
+                    cost = calculate_userdict_cost(surface, entry.commit_count)
                 }
             else
                 return {
-                    surface = kagiroi.trim_trailing_space(entry.custom_code),
+                    surface = surface,
                     left_id = -1,
                     right_id = -1,
                     candidate = entry.text,
