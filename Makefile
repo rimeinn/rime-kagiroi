@@ -14,7 +14,6 @@ update_mozc:
 
 clean:
 	$(RM) lua/kagiroi/dic/*
-	$(RM) lua/kagiroi/dic/matrix.def
 	$(RM) lua/kagiroi/dic.userdb/*
 
 $(MATRIX_DEF):
