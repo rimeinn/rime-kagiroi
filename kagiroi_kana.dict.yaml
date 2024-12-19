@@ -66,6 +66,7 @@ columns:
 も	mo
 や	ya
 ゆ	yu
+いぇ	ye
 よ	yo
 ら	ra
 り	ri
@@ -402,3 +403,10 @@ columns:
 っふゅ	;fyu
 っふぇ	;fye
 っふょ	;fyo
+
+# SPECIAL CASES
+んや	nnya
+んい	nnyi
+んゆ	nnyu
+んいぇ	nnye
+んよ	nnyo
