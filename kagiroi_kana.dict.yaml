@@ -274,11 +274,11 @@ columns:
 っぷ	;pu
 っぺ	;pe
 っぽ	;po
-っら	;ra
-っり	;ri
-っる	;ru
-っれ	;re
-っろ	;ro
+# っら	;ra
+# っり	;ri
+# っる	;ru
+# っれ	;re
+# っろ	;ro
 っきゃ	;kya
 っきぃ	;kyi
 っきゅ	;kyu
@@ -309,11 +309,11 @@ columns:
 っぢゅ	;dyu
 っぢぇ	;dye
 っぢょ	;dyo
-っにゃ	;nya
-っにぃ	;nyi
-っにゅ	;nyu
-っにぇ	;nye
-っにょ	;nyo
+# っにゃ	;nya
+# っにぃ	;nyi
+# っにゅ	;nyu
+# っにぇ	;nye
+# っにょ	;nyo
 っひゃ	;hya
 っひぃ	;hyi
 っひゅ	;hyu
@@ -329,16 +329,16 @@ columns:
 っぴゅ	;pyu
 っぴぇ	;pye
 っぴょ	;pyo
-っみゃ	;mya
-っみぃ	;myi
-っみゅ	;myu
-っみぇ	;mye
-っみょ	;myo
-っりゃ	;rya
-っりぃ	;ryi
-っりゅ	;ryu
-っりぇ	;rye
-っりょ	;ryo
+# っみゃ	;mya
+# っみぃ	;myi
+# っみゅ	;myu
+# っみぇ	;mye
+# っみょ	;myo
+# っりゃ	;rya
+# っりぃ	;ryi
+# っりゅ	;ryu
+# っりぇ	;rye
+# っりょ	;ryo
 っうぁ	;wha
 っうぃ	;whi
 っうぇ	;whe
