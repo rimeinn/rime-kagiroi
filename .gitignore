@@ -2,6 +2,7 @@
 build/
 trash/
 *.userdb/
+!lua/kagiroi/dic.userdb
 *.userdb.old/
 installation.yaml
 user.yaml

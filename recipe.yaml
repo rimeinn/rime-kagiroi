@@ -7,6 +7,6 @@ recipe:
 
 install_files: >-
   lua/kagiroi/*.lua
-  lua/kagiroi/dic/*
+  lua/kagiroi/dic.userdb/*
   opencc/*
   kagiroi*.yaml
