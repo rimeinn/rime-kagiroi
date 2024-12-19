@@ -2,8 +2,6 @@
 # 简介
 基于Rime实现的罗马字日语输入方案
 
-第一次部署时，会将词典和连接矩阵数据导入leveldb，耗费约1分钟
-
 # 特点
 - 使用[Project Mozc](https://github.com/google/mozc)的词典及连接矩阵数据
 - 使用Viterbi算法对假名序列进行转换
@@ -15,9 +13,12 @@
 # 用例
 ![](misc/example.png)
 
-<div style="padding: 10px; border: 1px solid #00f; background-color: #e7f3ff; color: #00529b; margin-bottom: 15px;">
-  💡 <strong>提示:</strong> 得益于Rime强大的配置能力，你可以在其他方案中使用本方案作为辅助输出，这可以通过与affix_segmentor的配合实现，以下配置仅作为参考。
-</div>
+
+> 💡 **提示**
+> 
+> 得益于Rime强大的配置能力，你可以在其他方案中使用本方案作为辅助输出，这可以通过与affix_segmentor的配合实现，以下配置仅作为参考。
+
+
 
 
 ```yaml
