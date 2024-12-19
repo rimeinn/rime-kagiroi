@@ -10,8 +10,6 @@ Rimeについては
 
 を参照してください
 
-初回Deployは辞書と連接表をleveldbにロードするため、1分ほどの時間がかかります
-
 # 特徴
 - [Project Mozc](https://github.com/google/mozc)の辞書、及び連接表データを使用
 - Viterbiアルゴリズムで最適変換を
