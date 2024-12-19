@@ -18,7 +18,7 @@ Rimeについては
 - Rime Algebraでいろんなローマ字表記を支援
 
 # インストール
-℞ `pfeiwu/rime-kagiroi`
+℞ `rimeinn/rime-kagiroi`
 
 # 使用例
 ![](misc/example.png)

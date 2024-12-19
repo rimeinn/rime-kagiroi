@@ -10,7 +10,7 @@
 - 使用Rime Algebra支持多种罗马字拼写
 
 # 安装
-℞ `pfeiwu/rime-kagiroi`
+℞ `rimeinn/rime-kagiroi`
 
 # 用例
 ![](misc/example.png)
