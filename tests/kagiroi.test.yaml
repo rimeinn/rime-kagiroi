@@ -1,0 +1,42 @@
+schema: kagiroi
+source_dir: ..
+deploy:
+  default:
+    tests:
+      - send: a
+        assert: cand[1].text == "あ" and cand[1].preedit == "あ"
+      - send: an
+        assert: cand[1].text == "案" and cand[1].preedit == "あn"
+      - send: ana
+        assert: cand[1].text == "穴" and cand[1].preedit == "あな"
+      - send: anat
+        assert: cand[1].text == "穴" and cand[1].preedit == "あなt"
+      - send: anata
+        assert: cand[1].text == "あなた" and cand[1].preedit == "あなた"
+
+      # edge cases
+      - send: tyaa
+        assert: cand[1].preedit == "ちゃあ"
+      - send: ccya
+        assert: cand[1].preedit == "っちゃ"
+      - send: nannya
+        assert: cand[1].preedit == "なんや"
+      - send: nnnnn
+        assert: cand[1].preedit == "んんんんn"
+
+      #　sentences
+      - send: karetahazunoedanitumottayuki
+        assert: cand[1].text == "枯れたはずの枝に積もった雪"
+      - send: suiheisenngahikaruasanianatanokibougakuzureotite
+        assert: cand[1].text == "水平線が光る朝にあなたの希望が崩れ落ちて"
+      
+      # partial selection
+      - send: 'daisukidattakotomo32241'
+        assert: commit == "だいすきだった事も"
+
+  nohenkan:
+    tests:
+      - send: 'aida{Control+c}'
+        assert: cand[1].text == "あいだ" and cand[2].text == "アイダ" and cand[3].text == "ｱｲﾀﾞ"
+      - send: 'aida{Control+c}'
+        assert: cand[1].text == "間"
