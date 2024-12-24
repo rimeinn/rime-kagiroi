@@ -21,7 +21,7 @@ pinyin_simp*
 sync/
 .env
 .pdm-python
-default.yaml
+# default.yaml
 mozc/
 rime_*
 installation.yaml
