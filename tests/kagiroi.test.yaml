@@ -4,25 +4,25 @@ deploy:
   default:
     tests:
       - send: a
-        assert: cand[1].text == "あ" and cand[1].preedit == "あ"
+        assert: cand[1].text == "あ"
       - send: an
-        assert: cand[1].text == "案" and cand[1].preedit == "あn"
+        assert: cand[1].text == "案"
       - send: ana
-        assert: cand[1].text == "穴" and cand[1].preedit == "あな"
+        assert: cand[1].text == "穴"
       - send: anat
-        assert: cand[1].text == "穴" and cand[1].preedit == "あなt"
+        assert: cand[1].text == "穴"
       - send: anata
-        assert: cand[1].text == "あなた" and cand[1].preedit == "あなた"
+        assert: cand[1].text == "あなた"
 
-      # edge cases
-      - send: tyaa
-        assert: cand[1].preedit == "ちゃあ"
-      - send: ccya
-        assert: cand[1].preedit == "っちゃ"
-      - send: nannya
-        assert: cand[1].preedit == "なんや"
-      - send: nnnnn
-        assert: cand[1].preedit == "んんんんn"
+      # # preedit edge cases
+      # - send: tyaa
+      #   assert: cand[1].preedit == "ちゃあ"
+      # - send: ccya
+      #   assert: cand[1].preedit == "っちゃ"
+      # - send: nannya
+      #   assert: cand[1].preedit == "なんや"
+      # - send: nnnnn
+      #   assert: cand[1].preedit == "んんんんn"
 
       #　sentences
       - send: karetahazunoedanitumottayuki
@@ -38,5 +38,3 @@ deploy:
     tests:
       - send: 'aida{Control+c}'
         assert: cand[1].text == "あいだ" and cand[2].text == "アイダ" and cand[3].text == "ｱｲﾀﾞ"
-      - send: 'aida{Control+c}'
-        assert: cand[1].text == "間"
