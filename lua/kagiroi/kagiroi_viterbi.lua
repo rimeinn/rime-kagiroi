@@ -149,7 +149,7 @@ end
 
 function Lattice:analyze(input)
     -- clear the lattice if it is a new input
-    if utf8.len(input) == 1 then
+    if utf8.len(input) == 1 or self.input == "" then
         self:clear()
     end
     -- first we need to figure out the common prefix of input and self.input
