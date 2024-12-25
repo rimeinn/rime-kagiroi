@@ -14,15 +14,17 @@ deploy:
       - send: anata
         assert: cand[1].text == "あなた"
 
-      # # preedit edge cases
-      # - send: tyaa
-      #   assert: cand[1].preedit == "ちゃあ"
-      # - send: ccya
-      #   assert: cand[1].preedit == "っちゃ"
-      # - send: nannya
-      #   assert: cand[1].preedit == "なんや"
-      # - send: nnnnn
-      #   assert: cand[1].preedit == "んんんんn"
+      # preedit edge cases
+      - send: tyaa
+        assert: preedit == "ちゃあ"
+      - send: ccya
+        assert: preedit == "っちゃ"
+      - send: nannya
+        assert: preedit == "なんや"
+      - send: nnnnn
+        assert: preedit == "んんn"
+      - send: nnnnnn
+        assert: preedit == "んんん"
 
       #　sentences
       - send: karetahazunoedanitumottayuki
