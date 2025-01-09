@@ -40,6 +40,7 @@ function Module.release()
         return
     end
     if Module.dic_db and Module.dic_db:loaded() then
+        collectgarbage()
         Module.dic_db:close()
     end
 end

@@ -40,3 +40,10 @@ deploy:
     tests:
       - send: 'aida{Control+c}'
         assert: cand[1].text == "あいだ" and cand[2].text == "アイダ" and cand[3].text == "ｱｲﾀﾞ"
+
+  nocrash:
+    tests:
+      - send: nani{space}
+        assert: true
+      - send: nani{space}
+        assert: true
