@@ -17,9 +17,11 @@ function Module.load()
         ref_count = ref_count + 1
         return
     end
-    Module._open_dic()
+    Module._open_dic_readonly()
     local lex_count = Module._get_lex_count()
     if lex_count <= 0 then
+        Module.dic_db:close()
+        Module.dic_db:open()
         log.info("Loading lex.csv...")
         Module._load_lex_file(rime_api.get_user_data_dir() .. pathsep .. "lua" .. pathsep .. "kagiroi" .. pathsep ..
                                   "dic" .. pathsep .. "lex.csv")
@@ -27,6 +29,8 @@ function Module.load()
         Module._load_matrix_file(rime_api.get_user_data_dir() .. pathsep .. "lua" .. pathsep .. "kagiroi" .. pathsep ..
                                      "dic" .. pathsep .. "matrix.def")
         log.info("Data loaded.")
+        Module.dic_db:close()
+        Module.dic_db:open_read_only()
     end
     log.info("kagiroi lex count: " .. Module._get_lex_count())
     log.info("kagiroi matrix count: " .. Module._get_matrix_count())
@@ -104,9 +108,9 @@ end
 ------------------------------------------------------------
 
 -- open LevelDB
-function Module._open_dic()
+function Module._open_dic_readonly()
     Module.dic_db = LevelDb("lua/kagiroi/dic")
-    if not Module.dic_db:open() then
+    if not Module.dic_db:open_read_only() then
         error("Failed to open LevelDB database.")
     end
 end
