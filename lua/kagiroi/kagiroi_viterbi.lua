@@ -425,7 +425,7 @@ function Module.init()
 end
 
 function Module.fini()
-    Module.lattice = nil
+    Module.lattice:clear()
     Module.kagiroi_dict.release()
 end
 
