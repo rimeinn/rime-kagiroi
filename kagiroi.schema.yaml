@@ -1,6 +1,7 @@
 schema:
   schema_id: kagiroi
   name: カギロイ
+  icon: kagiroi.ico
   version: '20241204'
   author:
     - kuroame
