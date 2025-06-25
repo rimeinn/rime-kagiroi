@@ -6,7 +6,6 @@
 -- version: 0.1.0
 -- author: kuroame
 
-local utf8 = require("utf8")
 local kagiroi = require("kagiroi/kagiroi")
 local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),

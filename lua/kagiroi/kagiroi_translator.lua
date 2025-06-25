@@ -5,7 +5,6 @@
 -- version: 0.1.0
 -- author: kuroame
 
-local utf8 = require("utf8")
 local kagiroi = require("kagiroi/kagiroi")
 
 local hiragana_node = {
