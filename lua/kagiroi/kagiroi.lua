@@ -1,6 +1,5 @@
 -- common dependency for kagiroi lua scripts
 
-local utf8 = require("utf8")
 local Module = {}
 -- @param string utf8
 -- @param i start_pos
