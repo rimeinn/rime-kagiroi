@@ -201,8 +201,8 @@ function Module.best()
     while cur_node and cur_node.type ~= "eos" do
         candidate = candidate .. cur_node.candidate
         surface = surface .. cur_node.surface
-        cur_node = Module._pre_node(cur_node)
         right_id = cur_node.right_id
+        cur_node = Module._pre_node(cur_node)
     end
     return {
         surface = surface,
