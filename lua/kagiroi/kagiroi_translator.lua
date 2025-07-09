@@ -106,13 +106,55 @@ local kHenkan = false
 local kMuhenkan = true
 
 function Top.init(env)
-    viterbi.init()
+    
     env.hiragana_trie = hiragana_trie:new()
     env.hiragana_trie:init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema('kagiroi_kana'), "translator", "script_translator")
     env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
-    viterbi.set_hira2kata_opencc(env.hira2kata_opencc)
+    local function calculate_userdict_cost(surface, commit_count)
+        local base_cost = 5000
+        
+        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
+        
+        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
+        
+        local cost = math.max(
+            500,
+            base_cost * length_penalty / frequency_bonus
+        )
+        return math.floor(cost)
+    end
+    env.userdict = function(input)
+        env.mem:user_lookup(input .. " \t", true)
+        local next_func, self = env.mem:iter_user()
+        return function()
+            local entry = next_func(self)
+            if not entry then
+                return nil
+            end
+            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
+            local surface = kagiroi.trim_trailing_space(entry.custom_code)
+            if candidate and left_id and right_id then
+                return {
+                    surface = surface,
+                    left_id = tonumber(left_id),
+                    right_id = tonumber(right_id),
+                    candidate = candidate,
+                    cost = calculate_userdict_cost(surface, entry.commit_count)
+                }
+            else
+                return {
+                    surface = surface,
+                    left_id = -1,
+                    right_id = -1,
+                    candidate = entry.text,
+                    cost = 50 / (entry.commit_count + 1)
+                }
+            end
+        end
+    end
+    viterbi.init(env)
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
 
@@ -155,52 +197,6 @@ function Top.init(env)
             end
         end
     end)
-
-    local function calculate_userdict_cost(surface, commit_count)
-        local base_cost = 5000
-        
-        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
-        
-        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-        
-        local cost = math.max(
-            500,
-            base_cost * length_penalty / frequency_bonus
-        )
-        return math.floor(cost)
-    end
-
-    -- Register the user dict to the viterbi thingy.
-    viterbi.register_userdict(function(input)
-        env.mem:user_lookup(input .. " \t", true)
-        local next_func, self = env.mem:iter_user()
-        return function()
-            local entry = next_func(self)
-            if not entry then
-                return nil
-            end
-            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
-            local surface = kagiroi.trim_trailing_space(entry.custom_code)
-            if candidate and left_id and right_id then
-                return {
-                    surface = surface,
-                    left_id = tonumber(left_id),
-                    right_id = tonumber(right_id),
-                    candidate = candidate,
-                    cost = calculate_userdict_cost(surface, entry.commit_count)
-                }
-            else
-                return {
-                    surface = surface,
-                    left_id = -1,
-                    right_id = -1,
-                    candidate = entry.text,
-                    cost = 50 / (entry.commit_count + 1)
-                }
-            end
-        end
-    end)
-
     env.delete_notifier = env.engine.context.delete_notifier:connect(function(ctx)
         viterbi.clear()
     end, 0)

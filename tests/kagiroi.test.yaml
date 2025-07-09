@@ -33,7 +33,7 @@ deploy:
         assert: cand[1].text == "水平線が光る朝にあなたの希望が崩れ落ちて"
       
       # partial selection
-      - send: 'daisukidattakotomo32241'
+      - send: 'daisukidattakotomo32231'
         assert: commit == "だいすきだった事も"
 
   nohenkan:

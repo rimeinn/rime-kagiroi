@@ -10,6 +10,8 @@ local kagiroi = require("kagiroi/kagiroi")
 local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
     lattice = {}, -- lattice for viterbi algorithm
+    max_word_length = 15,
+    lookup_cache = {},
 }
 
 local Node = {}
@@ -49,9 +51,28 @@ end
 -- @param surface string
 -- @return iterator of entries
 function Module._lookup(surface)
+    if Module.lookup_cache[surface] then
+        local cached_results = Module.lookup_cache[surface]
+        local index = 0
+        return function()
+            index = index + 1
+            return cached_results[index]
+        end
+    end
     local lex_iter = Module.kagiroi_dict.query_lex(surface, false)
     local userdict_iter = Module.query_userdict(surface)
-    return Module._merge_iter(lex_iter, userdict_iter)
+    local merged_iter = Module._merge_iter(lex_iter, userdict_iter)
+    
+    local results = {}
+    for entry in merged_iter do
+        table.insert(results, entry)
+    end
+    Module.lookup_cache[surface] = results
+    local index = 0
+    return function()
+        index = index + 1
+        return results[index]
+    end
 end
 
 
@@ -115,7 +136,8 @@ function Module.analyze(input)
         if valid_col & (1 << j) == 0 then
             goto continue
         end
-        for i = 1, j do
+        local max_start = math.max(1, j - Module.max_word_length + 1)
+        for i = max_start, j do
             local surface = kagiroi.utf8_sub(input, i, j)
             local iter = Module._lookup(surface)
             if iter then
@@ -123,7 +145,6 @@ function Module.analyze(input)
                     -- mark this column as valid, so that we can search nodes that end at i-1 in the next iteration
                     valid_col = valid_col | (1 << i - 1)
                     local node = Node:new_from_lex(lex)
-                    table.insert(Module.lattice[i], node)
                     -- try to connect to the best node that start at j + 1
                     node.prev_index_col = j + 1
                     local open_nodes = Module.lattice[node.prev_index_col]
@@ -131,14 +152,20 @@ function Module.analyze(input)
                     node.cost = math.huge
                     -- k: row index of the open node
                     for k, open_node in ipairs(open_nodes) do
-                        local cost = open_node.cost +
-                            Module.kagiroi_dict.query_matrix(lex.right_id, open_node.left_id) +
-                            lex.cost
-                        if cost < node.cost then
-                            node.cost = cost
+                        local cost_without_matrix = open_node.cost + lex.cost
+                        if cost_without_matrix > node.cost then
+                            break
+                        end
+                        local cost_with_matrix = cost_without_matrix +
+                            Module.kagiroi_dict.query_matrix(lex.right_id, open_node.left_id)
+                        if cost_with_matrix < node.cost then
+                            node.cost = cost_with_matrix
                             node.prev_index_row = k
                         end
                     end
+                    kagiroi.insert_sorted(Module.lattice[i], node, function(a, b)
+                        return a.cost < b.cost
+                    end)
                 end
             end
         end
@@ -173,7 +200,6 @@ function Module.best()
     while cur_node and cur_node.type ~= "eos" do
         candidate = candidate .. cur_node.candidate
         surface = surface .. cur_node.surface
-        left_id = cur_node.left_id
         cur_node = Module._pre_node(cur_node)
         right_id = cur_node.right_id
     end
@@ -193,56 +219,61 @@ function Module.best_n_prefix()
     local current_dummy_index = 1
     local high_quality_count = 7
     local high_quality_cost = 46040
-    local is_dummy_node_emitted = false
     local surface = {}
     local max_dummy_surface_len = 4
-    return function()
-        while current_index <= #Module.lattice[1] do
-            local best_n_node = Module.lattice[1][current_index]
-            if (utf8.len(best_n_node.surface) < max_dummy_surface_len) then
-                table.insert(surface, best_n_node.surface)
-                table.insert(surface, Module.hira2kata_opencc:convert(best_n_node.surface))
-            end
-            if not is_dummy_node_emitted and ((best_n_node.cost >= high_quality_cost or high_quality_count <= 0) or current_index >= #Module.lattice[1]) then
-                is_dummy_node_emitted = true
-                while current_dummy_index <= #surface do
-                    current_dummy_index = current_dummy_index + 1
-                    return Node:new(0, 0, 46041, surface[current_dummy_index], surface[current_dummy_index], "dummy")
-                end
-            end
-            current_index = current_index + 1
-            high_quality_count = high_quality_count - 1
-            return best_n_node
+    local next_node_cost = 0
+    local dummy_node_iter = function()
+        if current_dummy_index > #surface then
+            return nil
         end
+        local dummy_node = Node:new(0, 0, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2], "dummy")
+        current_dummy_index = current_dummy_index + 1
+        return dummy_node
     end
-end
-
-function Module.register_userdict(userdict)
-    Module.query_userdict = userdict
-end
-
-function Module.set_hira2kata_opencc(hira2kata_opencc)
-    Module.hira2kata_opencc = hira2kata_opencc
+    local best_n_node_iter = function()
+        if current_index > #Module.lattice[1] then
+            return nil
+        elseif current_index == #Module.lattice[1] then
+            next_node_cost = math.huge
+        else
+            next_node_cost = Module.lattice[1][current_index + 1].cost
+        end
+        local best_n_node = Module.lattice[1][current_index]
+        if (utf8.len(best_n_node.surface) < max_dummy_surface_len) then
+            table.insert(surface, {best_n_node.surface, best_n_node.surface})
+            table.insert(surface, {best_n_node.surface,Module.hira2kata_opencc:convert(best_n_node.surface)})
+        end
+        high_quality_count = high_quality_count - 1
+        current_index = current_index + 1
+        return best_n_node
+    end
+    return function()
+        if next_node_cost >= high_quality_cost or high_quality_count <= 0 then
+            return dummy_node_iter() or best_n_node_iter()
+        end
+        return best_n_node_iter()
+    end
 end
 
 function Module.clear()
     Module.lattice = {}
+    Module.lookup_cache = {}
 end
 
-function Module.init()
+function Module.init(env)
     Module.kagiroi_dict.load()
     Module.lattice = {}
-    Module.query_userdict = function(i)
-        return function()
-            return nil
-        end
-    end
+    Module.lookup_cache = {}
+    Module.query_userdict = env.userdict
+    Module.hira2kata_opencc = env.hira2kata_opencc
 end
 
 function Module.fini()
     Module.lattice = {}
-    Module.kagiroi_dict.release()
+    Module.lookup_cache = {}
+    Module.query_userdict = nil
     Module.hira2kata_opencc = nil
+    Module.kagiroi_dict.release()
 end
 
 return Module
