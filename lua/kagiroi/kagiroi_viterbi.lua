@@ -124,8 +124,9 @@ function Module.analyze(input)
     -- set the eos nodes
     local eos = Node:new(0, 0, 0, "", "", "eos")
     Module.lattice[input_len_utf8 + 1][1] = eos
-    -- mark if the column has any nodes
-    local valid_col = 1 << input_len_utf8
+    -- mark if the column has any nodes 
+    local valid_col = {}
+    valid_col[input_len_utf8 + 1] = true  -- eos column is valid
     -- i: start position of the surface
     -- j: end position of the surface
     for j = input_len_utf8, 1, -1 do
@@ -134,7 +135,7 @@ function Module.analyze(input)
         -- check if there are any nodes that start at j + 1
         -- if not, nodes end at j cannot be connected to this lattice
         -- so we can skip this iteration
-        if valid_col & (1 << j) == 0 then
+        if not valid_col[j + 1] then
             goto continue
         end
         local max_start = math.max(1, j - Module.max_word_length + 1)
@@ -144,7 +145,7 @@ function Module.analyze(input)
             if iter then
                 for lex in iter do
                     -- mark this column as valid, so that we can search nodes that end at i-1 in the next iteration
-                    valid_col = valid_col | (1 << i - 1)
+                    valid_col[i] = true
                     local node = Node:new_from_lex(lex)
                     -- try to connect to the best node that start at j + 1
                     node.prev_index_col = j + 1
