@@ -9,6 +9,7 @@
 local kagiroi = require("kagiroi/kagiroi")
 local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
+    hira2kata_opencc = Opencc("kagiroi_h2k.json"),
     lattice = {}, -- lattice for viterbi algorithm
     max_word_length = 15,
     lookup_cache = {},
@@ -264,15 +265,14 @@ function Module.init(env)
     Module.kagiroi_dict.load()
     Module.lattice = {}
     Module.lookup_cache = {}
-    Module.query_userdict = env.userdict
-    Module.hira2kata_opencc = env.hira2kata_opencc
+    Module.query_userdict = function(surface)
+        return nil
+    end
 end
 
 function Module.fini()
     Module.lattice = {}
     Module.lookup_cache = {}
-    Module.query_userdict = nil
-    Module.hira2kata_opencc = nil
     Module.kagiroi_dict.release()
 end
 

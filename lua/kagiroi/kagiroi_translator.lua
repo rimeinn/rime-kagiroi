@@ -125,7 +125,7 @@ function Top.init(env)
         )
         return math.floor(cost)
     end
-    env.userdict = function(input)
+    env.query_userdict = function(input)
         env.mem:user_lookup(input .. " \t", true)
         local next_func, self = env.mem:iter_user()
         return function()
@@ -154,7 +154,8 @@ function Top.init(env)
             end
         end
     end
-    viterbi.init(env)
+    viterbi.init()
+    viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
 
@@ -196,6 +197,7 @@ function Top.init(env)
                 save_phrase(dictentry)
             end
         end
+        viterbi.clear()
     end)
     env.delete_notifier = env.engine.context.delete_notifier:connect(function(ctx)
         viterbi.clear()
