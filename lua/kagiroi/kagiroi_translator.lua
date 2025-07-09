@@ -112,6 +112,7 @@ function Top.init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema('kagiroi_kana'), "translator", "script_translator")
     env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
+    viterbi.set_hira2kata_opencc(env.hira2kata_opencc)
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
 
@@ -244,13 +245,10 @@ function Top.henkan(hiragana_cand, env)
     end
     local hiragana_text = hiragana_cand.text
     viterbi.analyze(hiragana_text)
-    -- firstly, find a best match for the whole input
+    -- first, find a best match for the whole input
     local best_sentence = viterbi.best()
     yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
-    -- secondly, send a "contextual" phrase candidate
-    local prefix = best_sentence.prefix
-    yield(Top.lex2cand(hiragana_cand, prefix, env, ""))
-    -- finally, find the best n matches for the input prefix
+    -- then, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
     while true do
         local phrase = best_n()
