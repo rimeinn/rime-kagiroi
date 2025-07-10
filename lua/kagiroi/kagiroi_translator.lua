@@ -245,7 +245,9 @@ function Top.henkan(hiragana_cand, env)
     viterbi.analyze(hiragana_text)
     -- first, find a best match for the whole input
     local best_sentence = viterbi.best()
-    yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
+    if best_sentence then
+        yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
+    end
     -- then, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
     while true do

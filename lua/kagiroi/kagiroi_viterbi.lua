@@ -13,6 +13,7 @@ local Module = {
     lattice = {}, -- lattice for viterbi algorithm
     max_word_length = 15,
     lookup_cache = {},
+    surface = "",
 }
 
 local Node = {}
@@ -114,19 +115,16 @@ end
 -- column of lattice: start position of the surface
 -- @param input string
 function Module.analyze(input)
+    Module.surface = input
     local input_len_utf8 = utf8.len(input)
     
     -- initialize lattice columns as empty tables
     for i = 1, input_len_utf8 + 1 do
         Module.lattice[i] = {}
     end
-    
     -- set the eos nodes
     local eos = Node:new(0, 0, 0, "", "", "eos")
     Module.lattice[input_len_utf8 + 1][1] = eos
-    -- mark if the column has any nodes 
-    local valid_col = {}
-    valid_col[input_len_utf8 + 1] = true  -- eos column is valid
     -- i: start position of the surface
     -- j: end position of the surface
     for j = input_len_utf8, 1, -1 do
@@ -135,7 +133,7 @@ function Module.analyze(input)
         -- check if there are any nodes that start at j + 1
         -- if not, nodes end at j cannot be connected to this lattice
         -- so we can skip this iteration
-        if not valid_col[j + 1] then
+        if #Module.lattice[j + 1] == 0 then
             goto continue
         end
         local max_start = math.max(1, j - Module.max_word_length + 1)
@@ -144,8 +142,6 @@ function Module.analyze(input)
             local iter = Module._lookup(surface)
             if iter then
                 for lex in iter do
-                    -- mark this column as valid, so that we can search nodes that end at i-1 in the next iteration
-                    valid_col[i] = true
                     local node = Node:new_from_lex(lex)
                     -- try to connect to the best node that start at j + 1
                     node.prev_index_col = j + 1
@@ -186,13 +182,7 @@ end
 function Module.best()
     local best_node = Module.lattice[1][1]
     if not best_node then
-        return {
-            surface = "",
-            candidate = "",
-            cost = math.huge,
-            left_id = 0,
-            right_id = 0
-        }
+        return nil
     end
     local candidate = ""
     local surface = ""
@@ -232,6 +222,13 @@ function Module.best_n_prefix()
         current_dummy_index = current_dummy_index + 1
         return dummy_node
     end
+
+    if #Module.lattice[1] == 0 then
+        table.insert(surface, {Module.surface, Module.surface})
+        table.insert(surface, {Module.surface, Module.hira2kata_opencc:convert(Module.surface)})
+        return dummy_node_iter
+    end
+
     local best_n_node_iter = function()
         if current_index > #Module.lattice[1] then
             return nil
@@ -260,20 +257,19 @@ end
 function Module.clear()
     Module.lattice = {}
     Module.lookup_cache = {}
+    Module.surface = ""
 end
 
 function Module.init(env)
     Module.kagiroi_dict.load()
-    Module.lattice = {}
-    Module.lookup_cache = {}
+    Module.clear()
     Module.query_userdict = function(surface)
         return nil
     end
 end
 
 function Module.fini()
-    Module.lattice = {}
-    Module.lookup_cache = {}
+    Module.clear()
     Module.kagiroi_dict.release()
 end
 

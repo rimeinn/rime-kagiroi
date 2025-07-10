@@ -28,6 +28,7 @@ columns:
 ゕ	xka
 ゖ	xke
 っ	xtu
+っ	x
 ー	-
 あ	a
 い	i
@@ -229,6 +230,25 @@ columns:
 ふょ	fyo
 
 # sokuon
+っk	;k
+っc	;c
+っg	;g
+っh	;h
+っj	;j
+っt	;t
+っf	;f
+っw	;w
+っr	;r
+っz	;z
+っs	;s
+っv	;v
+っl	;l
+っt	;t
+っd	;d
+っb	;b
+っp	;p
+っm	;m
+っy	;y
 っゔ	;vu
 っか	;ka
 っき	;ki
