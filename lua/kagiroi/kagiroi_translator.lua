@@ -242,7 +242,7 @@ function Top.henkan(hiragana_cand, env)
         return
     end
     local hiragana_text = hiragana_cand.text
-    viterbi.analyze(hiragana_text)
+    viterbi.analyze(Top.trim_ending_letter(hiragana_text))
     -- first, find a best match for the whole input
     local best_sentence = viterbi.best()
     if best_sentence then
@@ -354,6 +354,15 @@ function Top.find_end(h_preedit, h_start, h_end, syllable_num)
         return n - syllable_num + h_start
     else
         return h_end
+    end
+end
+
+function Top.trim_ending_letter(hiragana_text)
+    -- if text ends like っx, x is a letter, trim the last character
+    if string.match(hiragana_text, "っ[a-z]$") then
+        return kagiroi.utf8_sub(hiragana_text, 1, -2)
+    else
+        return hiragana_text
     end
 end
 
