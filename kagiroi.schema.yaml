@@ -74,6 +74,7 @@ editor:
     Return: commit_script_text
 
 key_binder:
+  import_preset: default
   bindings:
     __patch:
       - kagiroi:/key_bindings/paging_with_minus_equal

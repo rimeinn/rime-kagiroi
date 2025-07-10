@@ -106,12 +106,56 @@ local kHenkan = false
 local kMuhenkan = true
 
 function Top.init(env)
-    viterbi.init()
+    
     env.hiragana_trie = hiragana_trie:new()
     env.hiragana_trie:init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema('kagiroi_kana'), "translator", "script_translator")
     env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
+    local function calculate_userdict_cost(surface, commit_count)
+        local base_cost = 5000
+        
+        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
+        
+        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
+        
+        local cost = math.max(
+            500,
+            base_cost * length_penalty / frequency_bonus
+        )
+        return math.floor(cost)
+    end
+    env.query_userdict = function(input)
+        env.mem:user_lookup(input .. " \t", true)
+        local next_func, self = env.mem:iter_user()
+        return function()
+            local entry = next_func(self)
+            if not entry then
+                return nil
+            end
+            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
+            local surface = kagiroi.trim_trailing_space(entry.custom_code)
+            if candidate and left_id and right_id then
+                return {
+                    surface = surface,
+                    left_id = tonumber(left_id),
+                    right_id = tonumber(right_id),
+                    candidate = candidate,
+                    cost = calculate_userdict_cost(surface, entry.commit_count)
+                }
+            else
+                return {
+                    surface = surface,
+                    left_id = -1,
+                    right_id = -1,
+                    candidate = entry.text,
+                    cost = 50 / (entry.commit_count + 1)
+                }
+            end
+        end
+    end
+    viterbi.init()
+    viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
 
@@ -153,53 +197,8 @@ function Top.init(env)
                 save_phrase(dictentry)
             end
         end
+        viterbi.clear()
     end)
-
-    local function calculate_userdict_cost(surface, commit_count)
-        local base_cost = 5000
-        
-        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
-        
-        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-        
-        local cost = math.max(
-            500,
-            base_cost * length_penalty / frequency_bonus
-        )
-        return math.floor(cost)
-    end
-
-    -- Register the user dict to the viterbi thingy.
-    viterbi.register_userdict(function(input)
-        env.mem:user_lookup(input .. " \t", true)
-        local next_func, self = env.mem:iter_user()
-        return function()
-            local entry = next_func(self)
-            if not entry then
-                return nil
-            end
-            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
-            local surface = kagiroi.trim_trailing_space(entry.custom_code)
-            if candidate and left_id and right_id then
-                return {
-                    surface = surface,
-                    left_id = tonumber(left_id),
-                    right_id = tonumber(right_id),
-                    candidate = candidate,
-                    cost = calculate_userdict_cost(surface, entry.commit_count)
-                }
-            else
-                return {
-                    surface = surface,
-                    left_id = -1,
-                    right_id = -1,
-                    candidate = entry.text,
-                    cost = 50 / (entry.commit_count + 1)
-                }
-            end
-        end
-    end)
-
     env.delete_notifier = env.engine.context.delete_notifier:connect(function(ctx)
         viterbi.clear()
     end, 0)
@@ -243,14 +242,13 @@ function Top.henkan(hiragana_cand, env)
         return
     end
     local hiragana_text = hiragana_cand.text
-    viterbi.analyze(hiragana_text)
-    -- firstly, find a best match for the whole input
+    viterbi.analyze(Top.trim_ending_letter(hiragana_text))
+    -- first, find a best match for the whole input
     local best_sentence = viterbi.best()
-    yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
-    -- secondly, send a "contextual" phrase candidate
-    local prefix = best_sentence.prefix
-    yield(Top.lex2cand(hiragana_cand, prefix, env, ""))
-    -- finally, find the best n matches for the input prefix
+    if best_sentence then
+        yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
+    end
+    -- then, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
     while true do
         local phrase = best_n()
@@ -356,6 +354,15 @@ function Top.find_end(h_preedit, h_start, h_end, syllable_num)
         return n - syllable_num + h_start
     else
         return h_end
+    end
+end
+
+function Top.trim_ending_letter(hiragana_text)
+    -- if text ends like っx, x is a letter, trim the last character
+    if string.match(hiragana_text, "っ[a-z]$") then
+        return kagiroi.utf8_sub(hiragana_text, 1, -2)
+    else
+        return hiragana_text
     end
 end
 
