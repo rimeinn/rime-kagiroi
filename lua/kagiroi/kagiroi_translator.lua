@@ -168,7 +168,13 @@ function Top.init(env)
             end
             return text, left_id, right_id
         end
-        
+        local function is_gikun_delimiter(dictentry)
+            if env.gikun_enable and dictentry.custom_code == env.gikun_delimiter then
+                return true
+            end
+            return false
+        end
+        local gikun_yomikata = nil
         -- If the commit contains multiple entries, we consider it as a sentence
         -- and its left id is the same as the first entry, right id is the same as the last entry.
         if #commit:get() > 1 then
@@ -177,19 +183,26 @@ function Top.init(env)
             local sleft_id = -1
             local sright_id = -1
             for i, dictentry in ipairs(commit:get()) do
-                local text, left_id, right_id = save_phrase(dictentry)
-                if sleft_id == -1 and left_id then
-                    sleft_id = left_id
+                if is_gikun_delimiter(dictentry) then
+                    gikun_yomikata = kagiroi.append_trailing_space(scustom_code)
+                    stext = ""
+                else
+                    local text, left_id, right_id = save_phrase(dictentry)
+                    if not gikun_yomikata then
+                        scustom_code = scustom_code .. kagiroi.trim_trailing_space(dictentry.custom_code)
+                        if sleft_id == -1 and left_id then
+                            sleft_id = left_id
+                        end
+                        if right_id then
+                            sright_id = right_id
+                        end
+                    end
+                    stext = stext .. text
                 end
-                if right_id then
-                    sright_id = right_id
-                end
-                stext = stext .. text
-                scustom_code = scustom_code .. kagiroi.trim_trailing_space(dictentry.custom_code)
             end
             local sentry = DictEntry()
             sentry.text = stext .. "|" .. sleft_id .. " " .. sright_id
-            sentry.custom_code = kagiroi.append_trailing_space(scustom_code)
+            sentry.custom_code =  gikun_yomikata or kagiroi.append_trailing_space(scustom_code)
             env.mem:update_userdict(sentry, 1, "")
         else
             local dictentry = commit:get()[1]
@@ -206,6 +219,10 @@ function Top.init(env)
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
 
     env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "hiragana"
+
+    -- gikun support
+    env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
+    env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/delimiter") or ";"
 end
 
 function Top.fini(env)
@@ -227,6 +244,9 @@ function Top.func(input, seg, env)
     env.pseudo_xlator:query(input, seg)
     local hiragana_cand = Top.query_roma2hira_xlator(input, seg, env)
     local composition_mode = env.engine.context:get_option("composition_mode") or kHenkan
+    if env.gikun_enable then
+        Top.gikun(input, seg, env)
+    end
     if hiragana_cand then
         if composition_mode == kHenkan then
             Top.henkan(hiragana_cand, env)
@@ -274,6 +294,18 @@ function Top.muhenkan(hiragana_cand, env)
         katakana_halfwidth_str, "")
     katakana_halfwidth_cand.preedit = katakana_halfwidth_str
     yield(katakana_halfwidth_cand)
+end
+
+function Top.gikun(input, seg, env)
+    local delimiter_len = string.len(env.gikun_delimiter)
+    if string.sub(input, 1, delimiter_len) == env.gikun_delimiter then
+        local delimiter_entry = DictEntry()
+        delimiter_entry.text = ""
+        delimiter_entry.custom_code = env.gikun_delimiter
+        local delimiter_cand = Phrase(env.mem, "kigun_delimiter", seg.start, seg.start + delimiter_len, delimiter_entry):toCandidate()
+        delimiter_cand.quality = math.huge
+        yield(ShadowCandidate(delimiter_cand, "kigun_delimiter_shadowed", "", "義訓"))
+    end
 end
 
 -- build rime candidates
