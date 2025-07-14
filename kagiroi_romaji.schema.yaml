@@ -49,7 +49,7 @@ speller:
     - derive/^-$/q/
 
 translator:
-  dictionary: kagiroi_kana
+  dictionary: kagiroi_romaji
   enable_completion: false
   enable_user_dict: false
   enable_sentence: true

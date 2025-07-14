@@ -8,7 +8,7 @@ schema:
   description: |
     スマートなローマ字日本語入力。
   dependencies:
-    - kagiroi_kana
+    - kagiroi_romaji
 
 switches:
   - name: ascii_mode
