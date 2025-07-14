@@ -297,6 +297,9 @@ function Top.muhenkan(hiragana_cand, env)
 end
 
 function Top.gikun(input, seg, env)
+    if env.engine.context.composition:toSegmentation():get_confirmed_position() == 0 then
+        return
+    end
     local delimiter_len = string.len(env.gikun_delimiter)
     if string.sub(input, 1, delimiter_len) == env.gikun_delimiter then
         local delimiter_entry = DictEntry()
