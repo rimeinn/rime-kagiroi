@@ -55,7 +55,7 @@ function hiragana_trie:insert(ustr, entry)
 end
 
 function hiragana_trie:init(env)
-    local mem = Memory(env.engine, Schema('kagiroi_kana'))
+    local mem = Memory(env.engine, Schema(env.layout))
     mem:dict_lookup("", true, 1000)
     for entry in mem:iter_dict() do
         self:insert(entry.text, entry)
@@ -106,10 +106,10 @@ local kHenkan = false
 local kMuhenkan = true
 
 function Top.init(env)
-    
     env.hiragana_trie = hiragana_trie:new()
+    env.layout = env.engine.schema.config:get_string("kagiroi/layout") or "kagiroi_romaji"
     env.hiragana_trie:init(env)
-    env.roma2hira_xlator = Component.Translator(env.engine, Schema('kagiroi_kana'), "translator", "script_translator")
+    env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     local function calculate_userdict_cost(surface, commit_count)

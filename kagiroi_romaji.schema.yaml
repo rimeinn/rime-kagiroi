@@ -1,0 +1,56 @@
+schema:
+  schema_id: kagiroi_romaji
+  name: kagiroi layout (romaji)
+  version: '20250714'
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ あ, 英字 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  processors:
+    - speller
+  segmentors:
+    - abc_segmentor
+  translators:
+    - script_translator
+
+speller:
+  alphabet: abcdefghijklmnopqrstuvwxyz-;
+  delimiter: " '"
+  algebra:
+    # ti→chi、tya→cha
+    - derive/^(;?)t(?:(i)|y([aueo]))$/$1ch$2$3/
+    # tya→cya
+    - derive/^(;?)t(y[aiueo])$/$1c$2/
+    # zi→ji、zya→jya
+    - derive/^(;?)z(i|y[aiueo])$/$1j$2/
+    # hu→fu、hwa→fa
+    - derive/^(;?)h(?:(u)|w([aioe]))$/$1f$2$3/
+    # si→shi、sya→sha
+    - derive/^(;?)s(?:(i)|y([aueo]))$/$1sh$2$3/
+    # jya→ja
+    - derive/^(;?)jy([aueo])$/$1j$2/
+    # tu→tsu、xtu→xtsu
+    - derive/^(;?)(x?)tu$/$1$2tsu/
+    # lで始まるの小書き文字の対応
+    # 例：xa→la、xya→lya、xtsu→ltsu など
+    - derive/^(;?)x([a-z]{1,3})$/$1l$2/
+    # 促音のマーク「;」の転換
+    - xform/^;([a-z])(.*)$/$1$1$2/
+    # 撥音「ん」を「nn」で入力可能
+    - derive/^n$/nn/
+    # -を「q」で入力可能
+    - derive/^-$/q/
+
+translator:
+  dictionary: kagiroi_kana
+  enable_completion: false
+  enable_user_dict: false
+  enable_sentence: true
+  tag: kagiroi

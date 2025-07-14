@@ -1,8 +1,8 @@
 schema:
-  schema_id: kagiroi_kana
-  name: 補助スキーム・使用不可
-  version: '20241204'
-
+  schema_id: kagiroi_szromaji
+  name: kagiroi layout (sz romaji)
+  version: '20250714'
+  
 switches:
   - name: ascii_mode
     reset: 0
@@ -11,7 +11,7 @@ switches:
     states: [ 半角, 全角 ]
   - name: ascii_punct
     states: [ 。，, ．， ]
-
+  
 engine:
   processors:
     - speller
@@ -23,9 +23,10 @@ engine:
 speller:
   alphabet: abcdefghijklmnopqrstuvwxyz-;
   delimiter: " '"
-  algebra:
-    __patch:
-      - kagiroi:/algebra/gen_hebon_code
 
 translator:
-  __include: kagiroi:/translator/kana_translator
+  dictionary: kagiroi_szromaji
+  enable_completion: false
+  enable_user_dict: false
+  enable_sentence: true
+  tag: kagiroi

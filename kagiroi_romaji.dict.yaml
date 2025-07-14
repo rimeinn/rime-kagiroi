@@ -3,12 +3,12 @@
 # encoding: utf-8
 # license: public domain
 
-# Kagiroi Kana Dictionary
+# Kagiroi Romaji Dictionary
 # using kunrei-style romanization, sokuon is marked with a semicolon
 
 ---
-name: kagiroi_kana
-version: 20241204
+name: kagiroi_romaji
+version: 20250714
 sort: by_weight
 columns:
   - text

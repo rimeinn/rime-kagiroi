@@ -46,9 +46,6 @@ engine:
 speller:
   alphabet: abcdefghijklmnopqrstuvwxyz-;
   delimiter: " '"
-  algebra:
-    __patch:
-      - kagiroi:/algebra/gen_hebon_code
 
 translator:
   dictionary: kagiroi
@@ -64,6 +61,7 @@ recognizer:
 
 kagiroi:
   preedit_view: hiragana # hiragana katakana romaji inline
+  layout: kagiroi_romaji
 
 abc_segmentor:
   extra_tags:
