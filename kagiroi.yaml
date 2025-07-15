@@ -8,6 +8,13 @@ key_bindings:
     __append:
       - { when: has_menu, accept: "Control+c", toggle: composition_mode}
 
+speller:
+  kana: 
+    alphabet: 123#4$5%6^7&8*9(0)-\qweErtyuiop]}asdfghjkl;'"zZxcvbnm,./
+  romaji:
+    alphabet: abcdefghijklmnopqrstuvwxyz-
+    delimiter: " '"
+
 punctuator:
   full_shape:
     ' ' : { commit: '　' }
@@ -75,3 +82,21 @@ punctuator:
     ']' : [ 」, 】, 〕, ］, 〛, 〙 ]
     '{' : [ 『, 〖, ｛ ]
     '}' : [ 』, 〗, ｝ ]
+
+ansikana_punctuator:
+  full_shape:
+    ' ' : { commit: '　' }
+    '<' : { commit: 、 }
+    '>' : { commit: 。 }
+    '/' : [ ・, …, /, ／, ÷]
+    '?' : [・,／,/]
+    '{' : [」,”,』,】,］ ]
+    '+' : [「,”,』,】,］ ]
+  half_shape:
+    ' ' : { commit: '　' }
+    '<' : [ 、, ，,  ・ ]
+    '>' : [ 。,．,.,…]
+    '/' : [ ・, …, /, ／, ÷]
+    '?' : [・,／,/]
+    '{' : [」,”,』,】,］ ]
+    '+' : [「,”,』,】,］ ]

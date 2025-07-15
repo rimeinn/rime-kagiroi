@@ -44,8 +44,7 @@ engine:
     - uniquifier
 
 speller:
-  alphabet: abcdefghijklmnopqrstuvwxyz-;
-  delimiter: " '"
+  __include: kagiroi:/speller/romaji
 
 translator:
   dictionary: kagiroi

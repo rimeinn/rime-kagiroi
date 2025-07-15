@@ -21,8 +21,7 @@ engine:
     - script_translator
 
 speller:
-  alphabet: abcdefghijklmnopqrstuvwxyz-;
-  delimiter: " '"
+  __include: kagiroi:/speller/romaji
   algebra:
     # ti→chi、tya→cha
     - derive/^(;?)t(?:(i)|y([aueo]))$/$1ch$2$3/
