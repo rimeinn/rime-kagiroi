@@ -1,0 +1,31 @@
+schema:
+  schema_id: kagiroi_kanji
+  name: kagiroi kanji
+  version: '20250715'
+    
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ あ, 英字 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+    
+engine:
+  processors:
+    - speller
+  segmentors:
+    - abc_segmentor
+  translators:
+    - table_translator
+
+speller:
+  alphabet: あいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわをんゃょっー
+  
+translator:
+  dictionary: kagiroi_kanji
+  enable_completion: false
+  enable_user_dict: false
+  enable_sentence: false
+  tag: kagiroi

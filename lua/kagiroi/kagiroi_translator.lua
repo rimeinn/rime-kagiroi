@@ -110,6 +110,7 @@ function Top.init(env)
     env.layout = env.engine.schema.config:get_string("kagiroi/layout") or "kagiroi_romaji"
     env.hiragana_trie:init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
+    env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     local function calculate_userdict_cost(surface, commit_count)
@@ -133,7 +134,7 @@ function Top.init(env)
             if not entry then
                 return nil
             end
-            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(%d+) (%d+)")
+            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
             local surface = kagiroi.trim_trailing_space(entry.custom_code)
             if candidate and left_id and right_id then
                 return {
@@ -162,7 +163,7 @@ function Top.init(env)
     -- Update the user dict when our candidate is committed.
     env.mem:memorize(function(commit)
         local function save_phrase(dictentry)
-            local text, left_id, right_id = string.match(dictentry.text, "(.+)|(%d+) (%d+)")
+            local text, left_id, right_id = string.match(dictentry.text, "(.+)|(-?%d+) (-?%d+)")
             if text and left_id and right_id then
                 env.mem:update_userdict(dictentry, 1, "")
             end
@@ -229,6 +230,7 @@ function Top.fini(env)
     env.mem:disconnect()
     env.pseudo_xlator = nil
     env.roma2hira_xlator = nil
+    env.kanji_xlator = nil
     env.delete_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
@@ -249,14 +251,14 @@ function Top.func(input, seg, env)
     end
     if hiragana_cand then
         if composition_mode == kHenkan then
-            Top.henkan(hiragana_cand, env)
+            Top.henkan(hiragana_cand, seg, env)
         elseif composition_mode == kMuhenkan then
             Top.muhenkan(hiragana_cand, env)
         end
     end
 end
 
-function Top.henkan(hiragana_cand, env)
+function Top.henkan(hiragana_cand, seg, env)
     local a = env.hiragana_trie
     if not a then
         return
@@ -270,9 +272,14 @@ function Top.henkan(hiragana_cand, env)
     end
     -- then, find the best n matches for the input prefix
     local best_n = viterbi.best_n_prefix(hiragana_text, -1)
+    local kanji_emitted = false
     while true do
         local phrase = best_n()
         if phrase then
+            if phrase.cost > 46040 and not kanji_emitted then
+                Top.kanji(hiragana_cand, seg, env)
+                kanji_emitted = true
+            end
             yield(Top.lex2cand(hiragana_cand, phrase, env, ""))
         else
             break
@@ -308,6 +315,22 @@ function Top.gikun(input, seg, env)
         local delimiter_cand = Phrase(env.mem, "kigun_delimiter", seg.start, seg.start + delimiter_len, delimiter_entry):toCandidate()
         delimiter_cand.quality = math.huge
         yield(ShadowCandidate(delimiter_cand, "kigun_delimiter_shadowed", "", "義訓"))
+    end
+end
+
+function Top.kanji(hiragana_cand, seg, env)
+    local hiragana_str = hiragana_cand.text
+    local xlation = env.kanji_xlator:query(hiragana_str, seg)
+    if xlation then
+        for cand in xlation:iter() do
+            local lex = {
+                candidate = cand.text,
+                left_id = -1,
+                right_id = -1,
+                surface = cand.preedit
+            }
+            yield(Top.lex2cand(hiragana_cand, lex, env, ""))
+        end
     end
 end
 

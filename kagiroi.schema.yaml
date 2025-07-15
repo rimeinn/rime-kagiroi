@@ -9,6 +9,7 @@ schema:
     スマートなローマ字日本語入力。
   dependencies:
     - kagiroi_romaji
+    - kagiroi_kanji
 
 switches:
   - name: ascii_mode
