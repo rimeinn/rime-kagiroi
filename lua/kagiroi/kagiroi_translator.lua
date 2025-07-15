@@ -323,6 +323,10 @@ function Top.kanji(hiragana_cand, seg, env)
     local xlation = env.kanji_xlator:query(hiragana_str, seg)
     if xlation then
         for cand in xlation:iter() do
+            -- TODO avoid generating sentence candidates
+            if cand.type == "sentence" then
+                goto continue
+            end
             local lex = {
                 candidate = cand.text,
                 left_id = -1,
@@ -330,6 +334,7 @@ function Top.kanji(hiragana_cand, seg, env)
                 surface = cand.preedit
             }
             yield(Top.lex2cand(hiragana_cand, lex, env, ""))
+            ::continue::
         end
     end
 end
