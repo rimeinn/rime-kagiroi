@@ -45,7 +45,8 @@ columns:
 あつ	ad
 ああ	ah
 ある	ar
-ぁ	av
+ぁ	ay
+あっ	av
 あん	af
 あり	al
 いあ	ia
@@ -58,9 +59,10 @@ columns:
 いて	it
 いい	ih
 いる	ir
+ぃ	iy
 いつ	iq
 いき	ic
-ぃ	iv
+いっ	iv
 いん	if
 いり	il
 うあ	ua
@@ -73,7 +75,8 @@ columns:
 うう	uh
 うつ	ur
 うわ	uw
-ぅ	uv
+ぅ	uy
+うっ	uv
 うん	uf
 うり	ul
 えあ	ea
@@ -88,7 +91,8 @@ columns:
 ええ	eh
 えつ	em
 える	er
-ぇ	ev
+ぇ	ey
+えっ	ev
 えん	ef
 えり	el
 おあ	oa
@@ -101,8 +105,9 @@ columns:
 おち	ot
 おお	oh
 おる	or
+ぉ	oy
 おく	ox
-ぉ	ov
+おっ	ov
 おん	of
 おり	ol
 か	ka
