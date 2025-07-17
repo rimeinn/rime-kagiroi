@@ -12,11 +12,11 @@ alphabet:
   3_dan:
     alphabet: -qwertyuiopasdfghjkl;zxcvbnm
   4_dan: 
-    alphabet: 123#4$5%6^7&8*9(0)-\qweErtyuiop=[]]}asdfghjkl;'"zZxcvbnm,./
+    alphabet: 123#4$5%6^7&8*9(0)-_=\qweErtyuiop=[]asdfghjkl;'"zZxcvbnm,.`
   3_dan_hira:
     alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz-;
   4_dan_hira:
-    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ123#4$5%6^7&8*9(0)-\qweErtyuiop]}asdfghjkl;'"zZxcvbnm,./
+    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ123#4$5%6^7&8*9(0)-_=\qweErtyuiop=[]asdfghjkl;'"zZxcvbnm,.`
   hira:
     alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ
 

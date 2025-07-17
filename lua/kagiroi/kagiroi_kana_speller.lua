@@ -97,18 +97,16 @@ function Top.func(key_event, env)
     local input = context.input
     local remaining_alphabet = ""
     if last_seg then
-        if not last_seg:has_tag("kagiroi") then
+        local seg_start = last_seg.start
+        if last_seg:has_tag("kagiroi") then
+            local seg_text = input:sub(seg_start + 1, last_seg._end)
+            remaining_alphabet = get_alphabet_suffix(seg_text, env.alphabet)
+            if env.gikun_enable and remaining_alphabet:sub(1,1) == env.gikun_delimiter then
+                remaining_alphabet = remaining_alphabet:sub(2, -1)
+            end
+        elseif seg_start ~= 0 or input ~= env.prefix then
             return kNoop
         end
-        local seg_start = last_seg.start
-        local seg_end = last_seg._end
-        local seg_text = input:sub(seg_start+1, seg_end)
-        remaining_alphabet = get_alphabet_suffix(seg_text, env.alphabet)
-        if env.gikun_enable and remaining_alphabet:sub(1,1) == env.gikun_delimiter then
-            remaining_alphabet = remaining_alphabet:sub(2, -1)
-        end
-    elseif input ~= env.prefix then
-        return kNoop
     end
     local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
