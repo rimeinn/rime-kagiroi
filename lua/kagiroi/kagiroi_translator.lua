@@ -74,6 +74,7 @@ function Top.init(env)
     viterbi.init()
     viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
+    env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
 
     -- Update the user dict when our candidate is committed.
