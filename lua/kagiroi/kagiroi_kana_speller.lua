@@ -58,6 +58,7 @@ function Top.init(env)
     env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "hiragana"
     env.layout = "kagiroi_" .. env.engine.schema.config:get_string("kagiroi/layout") or "romaji"
     env.alphabet = env.engine.schema.config:get_string("kagiroi/speller/alphabet") or "zyxwvutsrqponmlkjihgfedcba-;"
+    env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/alphabet")
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
 
@@ -69,6 +70,8 @@ function Top.init(env)
             ctx:pop_input(#input - error_pos + 1)
         end
     end, 0)
+    env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
+    env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/delimiter") or ";"
 end
 
 function Top.fini(env)
@@ -101,10 +104,13 @@ function Top.func(key_event, env)
         local seg_end = last_seg._end
         local seg_text = input:sub(seg_start+1, seg_end)
         remaining_alphabet = get_alphabet_suffix(seg_text, env.alphabet)
+        if env.gikun_enable and remaining_alphabet:sub(1,1) == env.gikun_delimiter then
+            remaining_alphabet = remaining_alphabet:sub(2, -1)
+        end
     elseif input ~= env.prefix then
         return kNoop
     end
-    local alphabet_text =  remaining_alphabet .. ch
+    local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
     if cand then
         local new_text = cand.text .. alphabet_text:sub(cand._end + 1)

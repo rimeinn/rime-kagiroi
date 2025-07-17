@@ -113,4 +113,65 @@ function Module.find_nth_char(s, char, n)
     return position
 end
 
+-- Function to check if a Unicode character is a Hiragana or Katakana
+-- @param char_str string (single character UTF-8 string)
+-- @return boolean true if it's a kana, false otherwise
+function Module.is_kana(char_str)
+    if not char_str or char_str == "" then
+        return false
+    end
+    
+    local codepoint = utf8.codepoint(char_str)
+ 
+    -- Standard Hiragana and Katakana
+    local is_standard_kana = (codepoint >= 0x3040 and codepoint <= 0x309F) or -- Hiragana
+                             (codepoint >= 0x30A0 and codepoint <= 0x30FF)    -- Katakana
+    
+    -- Prolonged Sound Mark (Chōonpu, ー)
+    local is_chouonpu = (codepoint == 0x30FC)
+ 
+    -- Archaic/Variant Kana (Hentaigana and some variant Katakana)
+    -- Hiragana Supplement (Hentaigana): U+1B000 – U+1B0FF
+    -- Katakana Phonetic Extensions (mostly variant Katakana): U+1B100 – U+1B12F
+    local is_archaic_kana = (codepoint >= 0x1B000 and codepoint <= 0x1B0FF) or -- Hiragana Supplement
+                            (codepoint >= 0x1B100 and codepoint <= 0x1B12F)    -- Katakana Phonetic Extensions
+ 
+    local is_kana_related_symbol = (codepoint == 0x3005) -- Iteration Mark (踊り字)
+ 
+    return is_standard_kana or is_chouonpu or is_archaic_kana  or is_kana_related_symbol
+end
+
+-- @param s string (UTF-8 string)
+-- @return string The string with non-kana characters trimmed from the end
+function Module.trim_non_kana_trailing(s)
+    if not s or s == "" then
+        return ""
+    end
+ 
+    local len = utf8.len(s)
+    if not len then -- Handle case where utf8.len returns nil (invalid UTF-8 sequence)
+        return s -- Or return "" depending on desired error handling
+    end
+ 
+    local last_kana_idx = 0 -- Keep track of the index of the last kana character
+    
+    -- Iterate backward from the end of the string
+    -- Note: Module.utf8_char_iter moves forward. We need a way to go backward.
+    -- The most straightforward way is to calculate indices and use utf8_sub.
+    for i = len, 1, -1 do
+        local char = Module.utf8_sub(s, i, i)
+        if Module.is_kana(char) then
+            last_kana_idx = i
+            break -- Found the last kana, so everything before this is kept
+        end
+    end
+ 
+    if last_kana_idx == 0 then
+        return "" -- No kana found in the string, return empty
+    else
+        -- Trim the string up to and including the last kana character
+        return Module.utf8_sub(s, 1, last_kana_idx)
+    end
+end
+
 return Module

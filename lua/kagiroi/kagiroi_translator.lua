@@ -167,7 +167,10 @@ function Top.func(input, seg, env)
 end
 
 function Top.henkan(input, seg, env)
-    local trimmed = string.gsub(input, "[a-z]+$", "")
+    local trimmed = kagiroi.trim_non_kana_trailing(input)
+    if env.gikun_enable then
+        trimmed = string.gsub(trimmed, env.gikun_delimiter .. ".*$", "")
+    end
     if trimmed == "" then
         return
     end
