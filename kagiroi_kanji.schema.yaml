@@ -1,7 +1,7 @@
 schema:
   schema_id: kagiroi_kanji
   name: kagiroi kanji
-  version: '20250715'
+  version: '20250717'
     
 switches:
   - name: ascii_mode
@@ -21,7 +21,7 @@ engine:
     - table_translator
 
 speller:
-  alphabet: あいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわをんゃょっー
+  __include: kagiroi:/alphabet/hira
   
 translator:
   dictionary: kagiroi_kanji

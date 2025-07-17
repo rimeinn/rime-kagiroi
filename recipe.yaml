@@ -3,7 +3,7 @@
 recipe:
   Rx: rime-kagiroi
   description: >-
-    Rimeフレームワークの日本語ローマ字入力設定
+    Rimeフレームワークの日本語入力設定
 
 install_files: >-
   lua/kagiroi/*.lua

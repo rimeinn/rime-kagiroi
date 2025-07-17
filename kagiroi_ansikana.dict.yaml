@@ -8,7 +8,7 @@
 
 ---
 name: kagiroi_ansikana
-version: 20250715
+version: 20250717
 sort: by_weight
 columns:
   - text
@@ -16,13 +16,12 @@ columns:
   - weight
 ...
 
+゛	[
+゜	=
 ぬ	1
 ふ	2
-ぶ	2[
-ぷ	2=
 あ	3
 う	4
-ゔ	4[
 ぅ	$
 え	5
 ぇ	%
@@ -37,64 +36,38 @@ columns:
 わ	0
 を	)
 ほ	-
-ぽ	-=
-ぼ	-[
 へ	\
-べ	\[
-ぺ	\=
-
 た	q
-だ	q[
 て	w
-で	w[
 い	e
 ぃ	E
 す	r
-ず	r[
 か	t
-が	t[
-ゕ	t=
 ん	y
 な	u
 に	i
 ら	o
 せ	p
-ぜ	p[
 む	]
 ー	}
 ち	a
-ぢ	a[
 と	s
-ど	s[
 し	d
-じ	d[
 は	f
-ば	f[
-ぱ	f=
 き	g
-ぎ	g[
 く	h
-ぐ	h[
 ま	j
 の	k
 り	l
 れ	;
 け	'
-げ	'[
-ゖ	'=
 ろ	"
 つ	z
-づ	z[
 っ	Z
 さ	x
-ざ	x[
 そ	c
-ぞ	c[
 ひ	v
-び	v[
-ぴ	v=
 こ	b
-ご	b[
 み	n
 も	m
 ね	,

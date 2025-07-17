@@ -7,7 +7,7 @@
 
 ---
 name: kagiroi_szromaji
-version: 20250715
+version: 20250717
 sort: by_weight
 columns:
   - text
@@ -20,12 +20,12 @@ columns:
 ぅ	lvu
 ぇ	lve
 ぉ	lvo
-ゃ	lvya
-ゅ	lvyu
-ょ	lvyo
-ゎ	lvyw
-ゕ	lvyk
-ゖ	lvyk
+ゃ	lfya
+ゅ	lfyu
+ょ	lfyo
+ゎ	lfwa
+ゕ	lfke
+ゖ	lfka
 あなた	ant
 あした	ast
 おまえ	ome

@@ -2,130 +2,46 @@
 -- main translator of kagiroi
 
 -- license: GPLv3
--- version: 0.1.0
+-- version: 0.2.0
 -- author: kuroame
 
 local kagiroi = require("kagiroi/kagiroi")
-
-local hiragana_node = {
-    entry = {},
-    children = {}
-}
-
-function hiragana_node:new()
-    local o = {
-        entry = nil,
-        children = {}
-    }
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-
-local hiragana_trie = {
-    root = hiragana_node:new(),
-    syl_list = {}
-}
-
-function hiragana_trie:new()
-    local o = {
-        root = hiragana_node:new(),
-        syl_list = {}
-    }
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-
--- insert a new node to the trie
-function hiragana_trie:insert(ustr, entry)
-    if self.syl_list[ustr] then
-        return
-    end
-    self.syl_list[ustr] = entry
-    local node = self.root
-    for i = 1, utf8.len(ustr) do
-        local u = kagiroi.utf8_sub(ustr, i, i)
-        if not node.children[u] then
-            node.children[u] = hiragana_node:new()
-        end
-        node = node.children[u]
-    end
-    node.entry = entry
-end
-
-function hiragana_trie:init(env)
-    local mem = Memory(env.engine, Schema(env.layout))
-    mem:dict_lookup("", true, 1000)
-    for entry in mem:iter_dict() do
-        self:insert(entry.text, entry)
-    end
-end
-
--- collect the entries from the trie
--- @param text string
--- @return table list of entries
-function hiragana_trie:collect(text)
-    local result = {}
-    local node = self.root
-    local buffer = ""
-    for i = 1, utf8.len(text) do
-        local u = kagiroi.utf8_sub(text, i, i)
-        -- check if there's more characters
-        -- if exist, append to buffer, and move to next node
-        if node.children[u] then
-            buffer = buffer .. u
-            node = node.children[u]
-        else
-            -- if not exist, save the current node
-            if buffer ~= "" then
-                if node.entry then
-                    table.insert(result, node.entry)
-                end
-                -- reset for new search
-                buffer = ""
-                node = self.root
-
-                if node.children[u] then
-                    buffer = buffer .. u
-                    node = node.children[u]
-                end
-            end
-        end
-    end
-    -- save the last node
-    if buffer ~= "" and node.entry then
-        table.insert(result, node.entry)
-    end
-    return result
-end
 
 local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
 local kHenkan = false
 local kMuhenkan = true
 
+-- build rime candidates
+local function lex2cand(seg, lex, env)
+    local dest_hiragana_str = lex.surface
+    local preedit = ""
+    local start = seg.start
+    local _end = seg.start + #dest_hiragana_str
+    local new_entry = DictEntry()
+    new_entry.preedit = preedit
+    -- save the lex data in entry text
+    new_entry.text = lex.candidate .. "|" .. lex.left_id .. " " .. lex.right_id
+    -- just use hiragana str as custom code
+    new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
+    local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
+    return ShadowCandidate(new_cand, "kagiroi", lex.candidate, "")
+end
+
+local function calculate_userdict_cost(surface, commit_count)
+    local base_cost = 5000
+    local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
+    local frequency_bonus = math.log(commit_count + 2) / math.log(2)
+    
+    local cost = math.max(
+        500,
+        base_cost * length_penalty / frequency_bonus
+    )
+    return math.floor(cost)
+end
+
 function Top.init(env)
-    env.hiragana_trie = hiragana_trie:new()
-    env.layout = env.engine.schema.config:get_string("kagiroi/layout") or "kagiroi_romaji"
-    env.hiragana_trie:init(env)
-    env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
-    env.pseudo_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "script_translator")
-    env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
-    local function calculate_userdict_cost(surface, commit_count)
-        local base_cost = 5000
-        
-        local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
-        
-        local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-        
-        local cost = math.max(
-            500,
-            base_cost * length_penalty / frequency_bonus
-        )
-        return math.floor(cost)
-    end
     env.query_userdict = function(input)
         env.mem:user_lookup(input .. " \t", true)
         local next_func, self = env.mem:iter_user()
@@ -219,8 +135,6 @@ function Top.init(env)
 
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
 
-    env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "hiragana"
-
     -- gikun support
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
     env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/delimiter") or ";"
@@ -229,7 +143,6 @@ end
 function Top.fini(env)
     env.mem:disconnect()
     env.pseudo_xlator = nil
-    env.roma2hira_xlator = nil
     env.kanji_xlator = nil
     env.delete_notifier:disconnect()
     viterbi.fini()
@@ -240,64 +153,55 @@ function Top.func(input, seg, env)
     if env.tag ~= "" and not seg:has_tag(env.tag) then
         return
     end
-    -- query pseudo translator to commit pending transaction
-    -- in the comming version of librime, we can use Memory:finish_session()
-    -- we use this workaround since most frontends have not been updated yet
-    env.pseudo_xlator:query(input, seg)
-    local hiragana_cand = Top.query_roma2hira_xlator(input, seg, env)
+    env.mem:finish_session()
     local composition_mode = env.engine.context:get_option("composition_mode") or kHenkan
     if env.gikun_enable then
         Top.gikun(input, seg, env)
     end
-    if hiragana_cand then
-        if composition_mode == kHenkan then
-            Top.henkan(hiragana_cand, seg, env)
-        elseif composition_mode == kMuhenkan then
-            Top.muhenkan(hiragana_cand, env)
-        end
+    if composition_mode == kHenkan then
+        Top.henkan(input, seg, env)
+    elseif composition_mode == kMuhenkan then
+        Top.muhenkan(input, seg, env)
     end
 end
 
-function Top.henkan(hiragana_cand, seg, env)
-    local a = env.hiragana_trie
-    if not a then
+function Top.henkan(input, seg, env)
+    local trimmed = string.gsub(input, "[a-z]+$", "")
+    if trimmed == "" then
         return
     end
-    local hiragana_text = hiragana_cand.text
-    viterbi.analyze(Top.trim_ending_letter(hiragana_text))
+    viterbi.analyze(trimmed)
     -- first, find a best match for the whole input
     local best_sentence = viterbi.best()
     if best_sentence then
-        yield(Top.lex2cand(hiragana_cand, best_sentence, env, ""))
+        yield(lex2cand( seg, best_sentence, env))
     end
     -- then, find the best n matches for the input prefix
-    local best_n = viterbi.best_n_prefix(hiragana_text, -1)
+    local best_n = viterbi.best_n_prefix(trimmed, -1)
     local kanji_emitted = false
-    while true do
-        local phrase = best_n()
-        if phrase then
-            if phrase.cost > 46040 and not kanji_emitted then
-                Top.kanji(hiragana_cand, seg, env)
-                kanji_emitted = true
-            end
-            yield(Top.lex2cand(hiragana_cand, phrase, env, ""))
-        else
-            break
+    local KANJI_CANDIDATE_COST_THRESHOLD = 460400
+    for phrase in best_n do
+        if not kanji_emitted and phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD then
+            Top.kanji(trimmed, seg, env)
+            kanji_emitted = true
         end
+        yield(lex2cand(seg, phrase, env))
+    end
+    if not kanji_emitted then
+        Top.kanji(trimmed, seg, env)
     end
 end
 
-function Top.muhenkan(hiragana_cand, env)
-    local hiragana_str = hiragana_cand.text
-    local hiragana_simp_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end, hiragana_str, "")
-    hiragana_simp_cand.preedit = hiragana_str
+function Top.muhenkan(input,seg, env)
+    local hiragana_simp_cand = Candidate("kagiroi", seg.start, seg._end, input, "")
+    hiragana_simp_cand.preedit = input
     yield(hiragana_simp_cand)
-    local katakana_str = env.hira2kata_opencc:convert(hiragana_str)
-    local katakana_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end, katakana_str, "")
+    local katakana_str = env.hira2kata_opencc:convert(input)
+    local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str, "")
     katakana_cand.preedit = katakana_str
     yield(katakana_cand)
-    local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(hiragana_str)
-    local katakana_halfwidth_cand = Candidate("kagiroi", hiragana_cand.start, hiragana_cand._end,
+    local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
+    local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end,
         katakana_halfwidth_str, "")
     katakana_halfwidth_cand.preedit = katakana_halfwidth_str
     yield(katakana_halfwidth_cand)
@@ -318,9 +222,8 @@ function Top.gikun(input, seg, env)
     end
 end
 
-function Top.kanji(hiragana_cand, seg, env)
-    local hiragana_str = hiragana_cand.text
-    local xlation = env.kanji_xlator:query(hiragana_str, seg)
+function Top.kanji(input, seg, env)
+    local xlation = env.kanji_xlator:query(input, seg)
     if xlation then
         for cand in xlation:iter() do
             -- TODO avoid generating sentence candidates
@@ -333,111 +236,10 @@ function Top.kanji(hiragana_cand, seg, env)
                 right_id = -1,
                 surface = cand.preedit
             }
-            yield(Top.lex2cand(hiragana_cand, lex, env, ""))
+            yield(lex2cand(seg, lex, env))
             ::continue::
         end
     end
-end
-
--- build rime candidates
-function Top.lex2cand(hcand, lex, env, comment)
-    local dest_hiragana_str = lex.surface
-    local end_with_sokuon = kagiroi.utf8_sub(dest_hiragana_str, -1) == "っ"
-    local end_with_single_n = kagiroi.utf8_sub(dest_hiragana_str, -1) == "ん" and
-                                  (hcand.preedit:sub(-2) == " n" or hcand.preedit == "n")
-
-    local preedit = ""
-    local start = hcand.start
-    local _end
-
-    if hcand.text == dest_hiragana_str then
-        _end = hcand._end
-        if env.preedit_view == "romaji" then
-            preedit = hcand.preedit
-        end
-    else
-        local entry_list = env.hiragana_trie:collect(dest_hiragana_str)
-        local syllable_num = #entry_list
-        -- SPECIAL CASE: if the dest_hiragana_str end with っ, _end should be in the middle of sokuon
-        -- eg. 「a tta」 , _end should be at the first t to separate the tta to t|ta
-        if end_with_sokuon then
-            _end = Top.find_end(hcand.preedit, hcand.start, hcand._end, syllable_num - 1) + 1
-        else
-            _end = Top.find_end(hcand.preedit, hcand.start, hcand._end, syllable_num)
-        end
-        if env.preedit_view == "romaji" then
-            for word in string.gmatch(hcand.preedit, "%S+") do
-                if preedit == "" then
-                    preedit = word
-                else
-                    preedit = preedit .. " " .. word
-                end
-                syllable_num = syllable_num - 1
-                if syllable_num == 0 then
-                    break
-                end
-            end
-        end
-    end
-
-    if env.preedit_view == "hiragana" then
-        preedit = dest_hiragana_str
-        if end_with_single_n and _end == hcand._end then
-            preedit = preedit:gsub("ん$", "n")
-        end
-    elseif env.preedit_view == "katakana" then
-        preedit = env.hira2kata_opencc:convert(dest_hiragana_str) or dest_hiragana_str
-        if end_with_single_n and _end == hcand._end then
-            preedit = preedit:gsub("ン$", "n")
-        end
-    elseif env.preedit_view == "inline" then
-        preedit = lex.candidate
-        if end_with_single_n then
-            preedit = preedit:gsub("ん$", "n"):gsub("ン$", "n")
-        end
-    end
-
-    local new_entry = DictEntry()
-    new_entry.preedit = preedit
-    -- save the lex data in entry text
-    new_entry.text = lex.candidate .. "|" .. lex.left_id .. " " .. lex.right_id
-    -- just use hiragana str as custom code
-    new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
-    local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
-    return ShadowCandidate(new_cand, "kagiroi", lex.candidate, comment)
-end
-
--- find the end position for the candidate
-function Top.find_end(h_preedit, h_start, h_end, syllable_num)
-    if syllable_num <= 0 then
-        return h_start
-    end
-    local n = kagiroi.find_nth_char(h_preedit, " ", syllable_num)
-    if n then
-        return n - syllable_num + h_start
-    else
-        return h_end
-    end
-end
-
-function Top.trim_ending_letter(hiragana_text)
-    -- if text ends like っx, x is a letter, trim the last character
-    if string.match(hiragana_text, "っ[a-z]$") then
-        return kagiroi.utf8_sub(hiragana_text, 1, -2)
-    else
-        return hiragana_text
-    end
-end
-
--- translate romaji to hiragana
-function Top.query_roma2hira_xlator(input, seg, env)
-    local xlation = env.roma2hira_xlator:query(input, seg)
-    if xlation then
-        local nxt, thisobj = xlation:iter()
-        local cand = nxt(thisobj)
-        return cand
-    end
-    return nil
 end
 
 return Top

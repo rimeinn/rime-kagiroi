@@ -21,7 +21,7 @@ engine:
     - script_translator
 
 speller:
-  __include: kagiroi:/speller/romaji
+  __include: kagiroi:/alphabet/3_dan
 
 translator:
   dictionary: kagiroi_szromaji

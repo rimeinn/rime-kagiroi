@@ -1,7 +1,7 @@
 schema:
   schema_id: kagiroi_ansikana
   name: kagiroi layout (ansikana)
-  version: '20250715'
+  version: '20250717'
 
 switches:
   - name: ascii_mode
@@ -21,8 +21,7 @@ engine:
     - script_translator
 
 speller:
-  __include: kagiroi:/speller/kana
-  delimiter: " '"
+  __include: kagiroi:/alphabet/4_dan
 
 translator:
   dictionary: kagiroi_ansikana

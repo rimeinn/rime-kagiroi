@@ -2,14 +2,16 @@ schema:
   schema_id: kagiroi
   name: カギロイ
   icon: kagiroi.ico
-  version: '20241204'
+  version: '20250717'
   author:
     - kuroame
   description: |
-    スマートなローマ字日本語入力。
+    スマートな日本語入力。
   dependencies:
     - kagiroi_romaji
     - kagiroi_kanji
+    - kagiroi_ansikana
+    - kagiroi_szromaji
 
 switches:
   - name: ascii_mode
@@ -27,6 +29,7 @@ engine:
     - ascii_composer
     - recognizer
     - key_binder
+    - lua_processor@*kagiroi/kagiroi_kana_speller
     - speller
     - punctuator
     - selector
@@ -45,7 +48,9 @@ engine:
     - uniquifier
 
 speller:
-  __include: kagiroi:/speller/romaji
+  __include: kagiroi:/alphabet/3_dan_hira
+  # use 4_dan_hira if you want to use ansikana or other layout that requires 4 rows of keys
+  # __include: kagiroi:/alphabet/4_dan_hira
 
 translator:
   dictionary: kagiroi
@@ -54,14 +59,12 @@ translator:
 
 punctuator:
   __patch:
-    - kagiroi:/punctuator
+    - kagiroi:/punct/3_dan
+    # use 4_dan if you want to use ansikana or other layout that requires 4 rows of keys
+    # - kagiroi:/punct/4_dan
 
 recognizer:
   import_preset: default
-
-kagiroi:
-  preedit_view: hiragana # hiragana katakana romaji inline
-  layout: kagiroi_romaji
 
 abc_segmentor:
   extra_tags:
@@ -75,5 +78,32 @@ key_binder:
   import_preset: default
   bindings:
     __patch:
-      - kagiroi:/key_bindings/paging_with_minus_equal
+      - kagiroi:/key_bindings/paging_with_minus_equal # comment this line out to free -= for use in 4-dan layouts
       - kagiroi:/key_bindings/kagiroi_switches
+
+kagiroi:
+  # Choose the input method layout. Whichever layout you select, 
+  # you must also add its corresponding schema file to the dependencies list in your schema
+  # See kagiroi_xxx.dict.yaml to check the actual definition of the layout
+  # options:
+  #  - romaji:  Similar to the standard Romaji input pre-installed on most operating systems
+  #  - szromaji: A custom, extended Romaji layout. (Note: Currently in early development)
+  #  - ansikana: Kana input (like a Japanese physical keyboard) adapted for a standard ANSI keyboard
+  #    (Note: Kana input will need a 4-dan alphabet/punctuator`)
+  layout: romaji
+  
+  speller:
+    __include: kagiroi:/alphabet/3_dan
+    # use 4_dan if you want to use ansikana or other layout that requires 4 rows of keys
+    # __include: kagiroi:/alphabet/4_dan
+
+  # Gikun (義訓) is a powerful feature for personalizing your dictionary.
+  # It allows you to associate a non-standard reading (what you type) with a specific word or phrase (the result)
+  # For example: The word "未来" (standard reading: みらい), with Gikun, you could create
+  # a custom entry like "あす;未来" to make rime suggest "未来" when you type "あす"
+  gikun:
+    # Enable or disable the Gikun feature
+    enable: true
+    # The delimiter to separate the reading and the text of the word
+    # Note: This character must also be added to your `speller/alphabet` to be recognized by the speller
+    delimiter: ";"
