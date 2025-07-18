@@ -107,6 +107,8 @@ function Top.func(key_event, env)
         elseif seg_start ~= 0 or input ~= env.prefix then
             return kNoop
         end
+    elseif env.prefix ~= "" then
+        return kNoop
     end
     local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
