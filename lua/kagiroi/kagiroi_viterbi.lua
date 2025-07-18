@@ -264,12 +264,14 @@ function Module.best_n(n)
         if last_node.type == "eos" then
             local candidate = ""
             local surface = ""
-            local right_id = 0
+            local right_id = nil
             while cur_sentence and cur_sentence.prefix do
                 local node = cur_sentence.last_node
+                if right_id == nil and node.type ~= "eos" then
+                    right_id = node.right_id
+                end
                 candidate = node.candidate .. candidate
                 surface = node.surface .. surface
-                right_id = right_id == 0 and node.right_id or right_id
                 cur_sentence = cur_sentence.prefix
             end
             local final_cand = cur_sentence.last_node.candidate .. candidate
@@ -285,7 +287,7 @@ function Module.best_n(n)
                         candidate = final_cand,
                         cost = sentence_cost,
                         left_id = cur_sentence.last_node.left_id,
-                        right_id = right_id,
+                        right_id = right_id or cur_sentence.last_node.right_id,
                     },
                     function(a, b)
                         return a.cost < b.cost
