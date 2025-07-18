@@ -98,6 +98,10 @@ kagiroi:
     # __include: kagiroi:/alphabet/4_dan
   
   translator:
+    sentence: 
+      # number of sentence candidates
+      size: 2
+    
     # Mapping input during translation, it's a convinient way to tweak input 
     # without affecting the behavior of the kana speller
     input_mapping:

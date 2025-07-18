@@ -136,6 +136,7 @@ function Top.init(env)
 
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
     env.mapping_projection = Projection(env.engine.schema.config:get_list('kagiroi/translator/input_mapping'))
+    env.sentence_size = env.engine.schema.config:get_int("kagiroi/translator/sentence/size") or 2
 
     -- gikun support
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
@@ -177,12 +178,12 @@ function Top.henkan(input, seg, env)
         return
     end
     viterbi.analyze(trimmed)
-    -- first, find a best match for the whole input
-    local best_sentence = viterbi.best()
-    if best_sentence then
-        yield(lex2cand( seg, best_sentence, env))
+    -- first, find the best n sentences matching the complete input
+    local sentences = viterbi.best_n(env.sentence_size)
+    for _, sentence in ipairs(sentences) do
+        yield(lex2cand( seg, sentence, env))
     end
-    -- then, find the best n matches for the input prefix
+    -- then, find the best n prefixes for partial selecting
     local best_n = viterbi.best_n_prefix(trimmed, -1)
     local kanji_emitted = false
     local KANJI_CANDIDATE_COST_THRESHOLD = 460400
