@@ -31,6 +31,8 @@ deploy:
         assert: cand[1].text == "枯れたはずの枝に積もった雪"
       - send: suiheisenngahikaruasanianatanokibougakuzureotite
         assert: cand[1].text == "水平線が光る朝にあなたの希望が崩れ落ちて"
+      - send: nagasisokonetashoujonoti
+        assert: cand[2].text == "流しそこねた少女の血"
       
       # partial selection
       - send: 'daisukidattakotomo32231'
