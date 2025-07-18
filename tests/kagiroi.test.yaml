@@ -34,7 +34,7 @@ deploy:
       
       # partial selection
       - send: 'daisukidattakotomo32231'
-        assert: commit == "だいすきだった事も"
+        assert: commit == "大好きだった事も"
 
   nohenkan:
     tests:
