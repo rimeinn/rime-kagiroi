@@ -5,8 +5,8 @@ deploy:
     tests:
       - send: a
         assert: cand[1].text == "あ"
-      # - send: an
-      #   assert: cand[1].text == "案"　outdated
+      - send: an
+        assert: cand[1].text == "案"
       - send: ana
         assert: cand[1].text == "穴"
       - send: anat
