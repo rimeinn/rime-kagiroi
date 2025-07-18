@@ -135,6 +135,7 @@ function Top.init(env)
     end, 0)
 
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
+    env.mapping_projection = Projection(env.engine.schema.config:get_list('kagiroi/translator/input_mapping'))
 
     -- gikun support
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
@@ -159,10 +160,11 @@ function Top.func(input, seg, env)
     if env.gikun_enable then
         Top.gikun(input, seg, env)
     end
+    local projected = env.mapping_projection:apply(input, true)
     if composition_mode == kHenkan then
-        Top.henkan(input, seg, env)
+        Top.henkan(projected, seg, env)
     elseif composition_mode == kMuhenkan then
-        Top.muhenkan(input, seg, env)
+        Top.muhenkan(projected, seg, env)
     end
 end
 

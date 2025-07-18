@@ -96,6 +96,14 @@ kagiroi:
     __include: kagiroi:/alphabet/3_dan
     # use 4_dan if you want to use ansikana or other layout that requires 4 rows of keys
     # __include: kagiroi:/alphabet/4_dan
+  
+  translator:
+    # Mapping input during translation, it's a convinient way to tweak input 
+    # without affecting the behavior of the kana speller
+    input_mapping:
+      # Explain trailing n as ん, this is useful when using romaji layout
+      # since you can avoid typing n twice to get ん
+      - xform/^(.*)n$/$1ん$/
 
   # Gikun (義訓) is a powerful feature for personalizing your dictionary.
   # It allows you to associate a non-standard reading (what you type) with a specific word or phrase (the result)
