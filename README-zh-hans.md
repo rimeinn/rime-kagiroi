@@ -1,11 +1,12 @@
 [日本語](README.md)
 # 简介
-基于Rime实现的罗马字日语输入方案
+基于Rime实现的日语输入方案
 
 # 特点
 - 使用[Project Mozc](https://github.com/google/mozc)的词典及连接矩阵数据
 - 使用Viterbi算法对假名序列进行转换
-- 使用Rime Algebra支持多种罗马字拼写
+- 內置罗马字、假名布局，也可以自行依据这些配置轻松地加入其他布局
+- 支持实时或者在kagiroi.dict.yaml里添加自定义词汇
 
 # 安装
 ℞ `rimeinn/rime-kagiroi`
@@ -26,20 +27,23 @@
   # 在xxx.custom.yaml中，xxx为你的主方案
   schema/dependencies/+:
     - kagiroi
-    - kagiroi_kana
   engine/segmentors/@before 5: affix_segmentor@kagiroi # 关于顺序问题，可以参考https://github.com/rime/librime/pull/959
+  engine/processors/@before 5: lua_processor@*kagiroi/kagiroi_kana_speller # kagiroi使用到的自定义speller，至少要放到rime自带speller的前面，如果打字发现编辑区仍然没有出现平假名，有可能是受到上游的processor的影响，可以试着把这个speller的顺序往前调整
+
   engine/translators/+:
-    - lua_translator@*kagiroi/kagiroi_translator
+    - lua_translator@*kagiroi/kagiroi_translator #kagiroi的主要translator，负责把平假名转换成候选
   kagiroi:
     prefix: ok # 引导前缀，可修改，如有修改，下面的pattern也需要同步改
-    tips: 〔火光〕 # 提示符，可修改 （火光（カギロイ/Glimmer）来自Xenoblade3，レックス(Rex)和ホムラ(Pyra)女儿的名字(大概)）
+    tips: 〔火光〕 # 提示符，可修改
     tag: kagiroi
-  recognizer/patterns/kagiroi: '(^ok[a-z\-]*$)'
+    layout: romaji # 布局，可选 romaji/kana 或者自定义一个布局
+    speller:
+      __include: kagiroi:/alphabet/3_dan # 罗马字布局需要用到3段式键盘，如果是kana布局，需要使用4段式 kagiroi:/alphabet/4_dan
 
-  # 在kagiroi方案中-和q都可以用来输入长音
-  # 作为辅助方案时，使用-输出长音需要以下额外的步骤：
-  # 1. 需要将-添加到alphabet中
-  speller/alphabet: ...-; #在原来的基础上加-即可
+  # 标记kagiroi段落的正则表达式
+  recognizer/patterns/kagiroi: '(^ok[ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz\-;]*$)'
+  # 由于kagiroi在speller里将用户输入的字母转换成了平假名，所以这里需要将平假名放到alphabet里面，否则kagiroi将无法正常工作
+  speller/alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ/;
   # 2. 需要修改-的翻页功能
   # 默认的key_bindings.yaml中，-被用作翻页键
   # 找到 - { when: has_menu, accept: minus, send: Page_Up } 将has_menu改为paging, 这样只有在进入paging状态后，-才会向前翻页
