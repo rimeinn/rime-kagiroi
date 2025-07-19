@@ -12,7 +12,7 @@ local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
     lattice = {}, -- lattice for viterbi algorithm
-    max_word_length = 15,
+    max_word_length = 100,
     lookup_cache = {},
     surface = "",
 }
