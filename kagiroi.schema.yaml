@@ -103,7 +103,7 @@ kagiroi:
       size: 2
 
       # allow table words to participate in sentence formation (only after being committed)
-      allow_table_word: true
+      allow_table_word: false
       # connection cost of table words, greater number makes it harder to be in a sentence
       table_word_connection_cost: 1000
     
