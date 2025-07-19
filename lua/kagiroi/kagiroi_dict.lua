@@ -85,11 +85,16 @@ local PREDEFINED = {}
 PREDEFINED["MATRIX:-1:-1"] = 1
 PREDEFINED["MATRIX:0:-1"] = 1
 PREDEFINED["MATRIX:-1:0"] = 1
+local PREDEFINED_WILDCARD = {}
 
 -- query matrix to get cost
 -- @param prev_id number
 -- @param next_id number
 function Module.query_matrix(prev_id, next_id)
+    local predef_wilcard = PREDEFINED_WILDCARD[prev_id] or PREDEFINED_WILDCARD[next_id]
+    if predef_wilcard then
+        return predef_wilcard
+    end
     local key = "MATRIX:" .. prev_id .. ":" .. next_id
     local predefined = PREDEFINED[key]
     if predefined then
@@ -101,6 +106,10 @@ function Module.query_matrix(prev_id, next_id)
     else
         return math.huge
     end
+end
+
+function Module.set_table_word_cost(cost)
+    PREDEFINED_WILDCARD[-2] = cost
 end
 
 ------------------------------------------------------------

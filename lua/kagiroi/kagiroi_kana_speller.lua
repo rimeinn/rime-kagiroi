@@ -62,12 +62,28 @@ function Top.init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
 
-    -- clean broken bytes
+    -- clean broken bytes & justify caret position
+    local last_caret_pos = 0
     env.update_notifier = env.engine.context.update_notifier:connect(function(ctx)
         local input = ctx.input
         local len, error_pos = utf8.len(input)
         if not len then
             ctx:pop_input(#input - error_pos + 1)
+        else 
+            local caret_pos = ctx.caret_pos
+            local left_input = input:sub(1, caret_pos)
+            local _, error_pos = utf8.len(left_input)
+            if error_pos then
+                -- moved left
+                if last_caret_pos > caret_pos then
+                    ctx.caret_pos = error_pos - 1
+                else -- moved right
+                    local next_bound = utf8.offset(input, 2, error_pos)
+                    ctx.caret_pos = next_bound and next_bound - 1 or #input
+                end
+            else
+                last_caret_pos = ctx.caret_pos
+            end
         end
     end, 0)
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true

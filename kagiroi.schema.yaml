@@ -29,7 +29,7 @@ engine:
     - ascii_composer
     - recognizer
     - key_binder
-    - lua_processor@*kagiroi/kagiroi_kana_speller
+    - lua_processor@*kagiroi/kagiroi_kana_speller # convert raw input to hiragana
     - speller
     - punctuator
     - selector
@@ -101,8 +101,13 @@ kagiroi:
     sentence: 
       # number of sentence candidates
       size: 2
+
+      # allow table words to participate in sentence formation (only after being committed)
+      allow_table_word: true
+      # connection cost of table words, greater number makes it harder to be in a sentence
+      table_word_connection_cost: 1000
     
-    # Mapping input during translation, it's a convinient way to tweak input 
+    # Mapping input during translation, it's a convenient way to tweak input 
     # without affecting the behavior of the kana speller
     input_mapping:
       # Explain trailing n as ん, this is useful when using romaji layout

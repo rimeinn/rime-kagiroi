@@ -1,15 +1,15 @@
 # Rime dictionary
 # encoding: utf-8
-# just a placeholder
-
+# Dictionary for kagiroi's table translator
 ---
 name: kagiroi
 version: 20241204
 sort: by_weight
-columns:
-  - code
-  - text
-  - weight
 ...
 
-placeholder	placeholder
+
+# Add your own words here, format:
+# Word{Tab}Pronounciation(in hiragana)
+中州韻	ちゅうしゅういん
+小狼毫	うぃーぜる
+鼠鬚管	すくわーる

@@ -327,6 +327,9 @@ end
 
 function Module.init(env)
     Module.kagiroi_dict.load()
+    if env.allow_table_word_in_sentence then
+        Module.kagiroi_dict.set_table_word_cost(env.table_word_cost)
+    end
     Module.clear()
     Module.query_userdict = function(surface)
         return nil

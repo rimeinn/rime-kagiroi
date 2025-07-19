@@ -10,3 +10,4 @@ install_files: >-
   lua/kagiroi/dic.userdb/*
   opencc/*
   kagiroi*.yaml
+  kagiroi.ico

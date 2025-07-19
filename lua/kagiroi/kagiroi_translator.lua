@@ -42,6 +42,7 @@ end
 
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
+    env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
     env.query_userdict = function(input)
         env.mem:user_lookup(input .. " \t", true)
         local next_func, self = env.mem:iter_user()
@@ -71,7 +72,9 @@ function Top.init(env)
             end
         end
     end
-    viterbi.init()
+    env.allow_table_word_in_sentence = env.engine.schema.config:get_bool("kagiroi/translator/sentence/allow_table_word")
+    env.table_word_cost = env.engine.schema.config:get_int("kagiroi/translator/sentence/table_word_connection_cost") or 1000
+    viterbi.init(env)
     viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
@@ -147,6 +150,7 @@ function Top.fini(env)
     env.mem:disconnect()
     env.pseudo_xlator = nil
     env.kanji_xlator = nil
+    env.table_xlator = nil
     env.delete_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
@@ -177,13 +181,19 @@ function Top.henkan(input, seg, env)
     if trimmed == "" then
         return
     end
+
+    -- 1) user custom phrase
+    Top.custom_phrase(trimmed, seg, env)
+    
+    -- 2) find the best n sentences matching the complete input
     viterbi.analyze(trimmed)
-    -- first, find the best n sentences matching the complete input
     local sentences = viterbi.best_n(env.sentence_size)
     for _, sentence in ipairs(sentences) do
         yield(lex2cand( seg, sentence, env))
     end
-    -- then, find the best n prefixes for partial selecting
+
+    -- 3) find the best n prefixes for partial selecting,
+    --    insert some kanji candidates after high-quality candidates
     local best_n = viterbi.best_n_prefix(trimmed, -1)
     local kanji_emitted = false
     local KANJI_CANDIDATE_COST_THRESHOLD = 460400
@@ -241,6 +251,27 @@ function Top.kanji(input, seg, env)
                 candidate = cand.text,
                 left_id = -1,
                 right_id = -1,
+                surface = cand.preedit
+            }
+            yield(lex2cand(seg, lex, env))
+            ::continue::
+        end
+    end
+end
+
+function Top.custom_phrase(input, seg, env)
+    local xlation = env.table_xlator:query(input, seg)
+    log.info("hello")
+    if xlation then
+        for cand in xlation:iter() do
+            log.info("ctype: " .. cand.type)
+            if cand.type ~= "table" then
+                goto continue
+            end
+            local lex = {
+                candidate = cand.text,
+                left_id = -2,
+                right_id = -2,
                 surface = cand.preedit
             }
             yield(lex2cand(seg, lex, env))
