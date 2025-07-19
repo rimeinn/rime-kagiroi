@@ -44,10 +44,10 @@
   recognizer/patterns/kagiroi: '(^ok[ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz\-;]*$)'
   # 由于kagiroi在speller里将用户输入的字母转换成了平假名，所以这里需要将平假名放到alphabet里面，否则kagiroi将无法正常工作
   speller/alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ/;
-  # 2. 需要修改-的翻页功能
-  # 默认的key_bindings.yaml中，-被用作翻页键
-  # 找到 - { when: has_menu, accept: minus, send: Page_Up } 将has_menu改为paging, 这样只有在进入paging状态后，-才会向前翻页
-  # 也可以在key_bindings.custom.yaml通过patch方式修改（更好）
+  # 长音的输入
+  # 可以使用 `q` 或者 `-` 输入长音，使用 `-` 时需要修改 `-` 的翻页功能
+  # 在 `key_bindings.yaml` 里找到 `- { when: has_menu, accept: minus, send: Page_Up }` 将 `has_menu` 改为 `paging`
+  # 或在 `key_bindings.custom.yaml` 通过 patch 方式修改（推荐）
 
 ```
 
