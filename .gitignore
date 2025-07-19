@@ -23,6 +23,7 @@ sync/
 .pdm-python
 # default.yaml
 mozc/
+.temp/
 rime_*
 installation.yaml
 kagiroi.txt
