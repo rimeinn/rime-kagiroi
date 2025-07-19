@@ -1,0 +1,77 @@
+
+# Rime dictionary
+# encoding: utf-8
+# license: public domain
+
+# Kagiroi ANSI-Kana Dictionary
+# Kana layout on ansi keyboard
+
+---
+name: kagiroi_ansikana
+version: 20250717
+sort: by_weight
+columns:
+  - text
+  - code
+  - weight
+...
+
+ろ	`
+ぬ	1
+ふ	2
+あ	3
+う	4
+ぅ	$
+え	5
+ぇ	%
+お	6
+ぉ	^
+や	7
+ゃ	&
+ゆ	8
+ゅ	*
+よ	9
+ょ	(
+わ	0
+を	)
+ほ	-
+ー	_
+へ	=
+た	q
+て	w
+い	e
+ぃ	E
+す	r
+か	t
+ん	y
+な	u
+に	i
+ら	o
+せ	p
+゛	[
+゜	]
+む	\
+ち	a
+と	s
+し	d
+は	f
+き	g
+く	h
+ま	j
+の	k
+り	l
+れ	;
+け	'
+つ	z
+っ	Z
+さ	x
+そ	c
+ひ	v
+こ	b
+み	n
+も	m
+ね	,
+る	.
+め	/
+#nocomment
+ぁ	#

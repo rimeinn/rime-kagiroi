@@ -3,10 +3,11 @@
 -- to offer contextual candidates.
 
 -- license: GPLv3
--- version: 0.2.0
+-- version: 0.2.1
 -- author: kuroame
 
 local kagiroi = require("kagiroi/kagiroi")
+local PriorityQueue =  require("kagiroi/priority_queue")
 local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
@@ -35,6 +36,9 @@ function Node:new(left_id, right_id, cost, surface, candidate, type)
     o.surface = surface -- surface of the node, from lex
     o.candidate = candidate -- candidate of the node, from lex
     o.type = type -- type of the node: dummy, lex, bos(begin of sentence), eos(end of sentence)
+    o.start = -1 -- start pos
+    o._end = -1 -- end pos
+    o.wcost = 0
     return o
 end
 
@@ -122,7 +126,7 @@ function Module.analyze(input)
     for i = 1, input_len_utf8 + 1 do
         Module.lattice[i] = {}
     end
-    -- set the eos nodes
+    -- set the eos node
     local eos = Node:new(0, 0, 0, "", "", "eos")
     Module.lattice[input_len_utf8 + 1][1] = eos
     -- i: start position of the surface
@@ -148,9 +152,10 @@ function Module.analyze(input)
                     local open_nodes = Module.lattice[node.prev_index_col]
                     -- evaluate open nodes
                     node.cost = math.huge
+                    node.wcost = lex.cost
                     -- k: row index of the open node
                     for k, open_node in ipairs(open_nodes) do
-                        local cost_without_matrix = open_node.cost + lex.cost
+                        local cost_without_matrix = open_node.cost + node.wcost
                         if cost_without_matrix > node.cost then
                             break
                         end
@@ -161,6 +166,8 @@ function Module.analyze(input)
                             node.prev_index_row = k
                         end
                     end
+                    node.start = i
+                    node._end = j
                     kagiroi.insert_sorted(Module.lattice[i], node, function(a, b)
                         return a.cost < b.cost
                     end)
@@ -177,35 +184,8 @@ function Module.analyze(input)
     end)
 end
 
--- generate best candidate for the input
--- @return iterator of nbest list
-function Module.best()
-    local best_node = Module.lattice[1][1]
-    if not best_node then
-        return nil
-    end
-    local candidate = ""
-    local surface = ""
-    local left_id = best_node.left_id
-    local right_id = best_node.right_id
-    local cur_node = best_node
-    while cur_node and cur_node.type ~= "eos" do
-        candidate = candidate .. cur_node.candidate
-        surface = surface .. cur_node.surface
-        right_id = cur_node.right_id
-        cur_node = Module._pre_node(cur_node)
-    end
-    return {
-        surface = surface,
-        candidate = candidate,
-        cost = best_node.cost,
-        left_id = left_id,
-        right_id = right_id
-    }
-end
-
 -- generate the nbest list for the prefix
--- @return iterator of nbest list
+-- @return iterator of nbest prefixes
 function Module.best_n_prefix()
     local current_index = 1
     local current_dummy_index = 1
@@ -254,6 +234,91 @@ function Module.best_n_prefix()
     end
 end
 
+-- generate nbest candidate for the input
+-- @return iterator of nbest sentences
+function Module.best_n(n)
+    n = (n and n > 0) and n or 10
+    local first_nodes = Module.lattice[1]
+    local pending_sentences = PriorityQueue()
+    local result_sentences = {}
+    local result_sen_cost_by_cand = {}
+    local search_cost_threshold = math.huge
+    local m = n
+    for _, node in ipairs(first_nodes) do
+        local initial = {
+            g = node.wcost + Module.kagiroi_dict.query_matrix(0, node.left_id), -- history cost, 0 is bos.right_id
+            h = node.cost - node.wcost, -- heuristic cost
+            prefix = nil,
+            last_node = node
+        }
+        pending_sentences:put(initial, initial.g + initial.h)
+    end
+    while true do
+        local cur_sentence = pending_sentences:pop()
+        if not cur_sentence 
+            or (cur_sentence.g + cur_sentence.h) > search_cost_threshold then -- prune here since there are only sentences with larger cost left
+            break
+        end
+        local last_node = cur_sentence.last_node
+        local sentence_cost = cur_sentence.g + cur_sentence.h
+        if last_node.type == "eos" then
+            local candidate = ""
+            local surface = ""
+            local right_id = nil
+            while cur_sentence and cur_sentence.prefix do
+                local node = cur_sentence.last_node
+                if right_id == nil and node.type ~= "eos" then
+                    right_id = node.right_id
+                end
+                candidate = node.candidate .. candidate
+                surface = node.surface .. surface
+                cur_sentence = cur_sentence.prefix
+            end
+            local final_cand = cur_sentence.last_node.candidate .. candidate
+            local existing_cand = result_sen_cost_by_cand[final_cand]
+            if not existing_cand or existing_cand > sentence_cost then
+                if existing_cand then
+                    -- duplicated text, hence the need for one more cand
+                    m = m + 1
+                end
+                kagiroi.insert_sorted(result_sentences, 
+                    {
+                        surface = cur_sentence.last_node.surface .. surface,
+                        candidate = final_cand,
+                        cost = sentence_cost,
+                        left_id = cur_sentence.last_node.left_id,
+                        right_id = right_id or cur_sentence.last_node.right_id,
+                    },
+                    function(a, b)
+                        return a.cost < b.cost
+                    end
+                )
+                result_sen_cost_by_cand[final_cand] = sentence_cost
+                -- update cost threshold for pruning
+                if #result_sentences >= m then
+                    search_cost_threshold = result_sentences[m].cost
+                end
+            end
+        else   
+            local open_nodes = Module.lattice[last_node._end + 1]
+            for _, open_node in ipairs(open_nodes) do
+                local extended = {  
+                    g = cur_sentence.g + open_node.wcost +
+                    Module.kagiroi_dict.query_matrix(last_node.right_id, open_node.left_id), -- history cost
+                    h = open_node.cost - open_node.wcost, -- heuristic cost
+                    prefix = cur_sentence,
+                    last_node = open_node
+                }
+                local ex_f = extended.g + extended.h
+                if ex_f < search_cost_threshold then
+                    pending_sentences:put(extended, ex_f)
+                end
+            end
+        end
+    end
+    return result_sentences
+end
+
 function Module.clear()
     Module.lattice = {}
     Module.lookup_cache = {}
@@ -262,6 +327,9 @@ end
 
 function Module.init(env)
     Module.kagiroi_dict.load()
+    if env.allow_table_word_in_sentence then
+        Module.kagiroi_dict.set_table_word_cost(env.table_word_cost)
+    end
     Module.clear()
     Module.query_userdict = function(surface)
         return nil

@@ -1,7 +1,7 @@
 [简体中文](README-zh-hans.md)
 
 # 概要
-Rime Input Method Engineで作ったローマ字日本語IME
+Rime Input Method Engineで作った日本語IME
 
 Rimeについては
 
@@ -13,7 +13,7 @@ Rimeについては
 # 特徴
 - [Project Mozc](https://github.com/google/mozc)の辞書、及び連接表データを使用
 - Viterbiアルゴリズムで最適変換を
-- Rime Algebraでいろんなローマ字表記を支援
+- ローマ字、かな入力はもちろん、簡単な設定で**あなただけ**の入力方式を自由に作成可能
 
 # インストール
 ℞ `rimeinn/rime-kagiroi`
