@@ -6,7 +6,7 @@ deploy:
       - send: a
         assert: cand[1].text == "あ"
       - send: an
-        assert: cand[1].text == "あん"
+        assert: cand[1].text == "アン"
       - send: ana
         assert: cand[1].text == "穴"
       - send: anat
