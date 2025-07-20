@@ -3,7 +3,7 @@
 -- expose functions to query data
 
 -- license: GPLv3
--- version: 0.1.0
+-- version: 0.1.1
 -- author: kuroame
 
 local Module = {
@@ -106,6 +106,14 @@ function Module.query_matrix(prev_id, next_id)
     else
         return math.huge
     end
+end
+
+function Module.get_prefix_penalty(next_id)
+    return Module.query_matrix(-10, next_id)
+end
+
+function Module.get_suffix_penalty(prev_id)
+    return Module.query_matrix(prev_id, -20)
 end
 
 function Module.set_table_word_cost(cost)

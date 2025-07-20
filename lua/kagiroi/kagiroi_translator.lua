@@ -194,7 +194,7 @@ function Top.henkan(input, seg, env)
 
     -- 3) find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
-    local best_n = viterbi.best_n_prefix(trimmed, -1)
+    local best_n = viterbi.best_n_prefix()
     local kanji_emitted = false
     local KANJI_CANDIDATE_COST_THRESHOLD = 460400
     for phrase in best_n do
@@ -264,7 +264,6 @@ function Top.custom_phrase(input, seg, env)
     log.info("hello")
     if xlation then
         for cand in xlation:iter() do
-            log.info("ctype: " .. cand.type)
             if cand.type ~= "table" then
                 goto continue
             end

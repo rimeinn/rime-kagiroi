@@ -18,6 +18,7 @@ clean:
 
 $(MATRIX_DEF):
 	./tools/generate_matrix_def.py
+	./tools/prefix_suffix_penalty.py >> lua/kagiroi/dic/matrix.def
 
 $(LEX_CSV):
 	cat mozc/src/data/dictionary_oss/dictionary*.txt | tr "\\t" "," | grep -v "^," > lua/kagiroi/dic/lex.csv
