@@ -179,15 +179,23 @@ function Module.analyze(input)
         end
         ::continue::
     end
-
+     -- sort the nodes in lattice[1] by cost
+     table.sort(Module.lattice[1], function(a, b)
+        return a.cost + Module.kagiroi_dict.query_matrix(eos.right_id, a.left_id) <
+            b.cost + Module.kagiroi_dict.query_matrix(eos.right_id, b.left_id)
+    end)
 end
 
 -- generate the nbest list for the prefix
 -- @return iterator of nbest prefixes
 function Module.best_n_prefix()
-    local first_nodes = Module.lattice[1]
+    local current_index = 1
     local current_dummy_index = 1
+    local high_quality_count = 7
+    local high_quality_cost = 46040
     local surface = {}
+    local max_dummy_surface_len = 4
+    local next_node_cost = 0
     local dummy_node_iter = function()
         if current_dummy_index > #surface then
             return nil
@@ -196,81 +204,29 @@ function Module.best_n_prefix()
         current_dummy_index = current_dummy_index + 1
         return dummy_node
     end
-    if #first_nodes == 0 then
+
+    if #Module.lattice[1] == 0 then
         table.insert(surface, {Module.surface, Module.surface})
         table.insert(surface, {Module.surface, Module.hira2kata_opencc:convert(Module.surface)})
         return dummy_node_iter
     end
 
-    local bos_right_id = 0
-    local eos_left_id = 0
-    local high_quality_count = 7
-    local high_quality_cost = 46040
-    local max_dummy_surface_len = 4
-    local next_node_cost = 0
-    local candidates = {}
-    for _, node1 in ipairs(first_nodes) do
-        local total_cost = node1.wcost + 
-                          Module.kagiroi_dict.query_matrix(bos_right_id, node1.left_id) +
-                          Module.kagiroi_dict.query_matrix(node1.right_id, eos_left_id) +
-                          Module.kagiroi_dict.get_prefix_penalty(node1.left_id)+
-                          Module.kagiroi_dict.get_suffix_penalty(node1.right_id)
-        table.insert(candidates, {
-            surface = node1.surface,
-            candidate = node1.candidate,
-            cost = total_cost + 2800,
-            left_id = node1.left_id,
-            right_id = node1.right_id,
-        })
-        
-        local second_start_pos = node1._end + 1
-        if second_start_pos <= #Module.lattice then
-            local second_nodes = Module.lattice[second_start_pos] or {}
-            for _, node2 in ipairs(second_nodes) do
-                local total_cost_2 = node1.wcost + node2.wcost +
-                                   Module.kagiroi_dict.query_matrix(bos_right_id, node1.left_id) +
-                                   Module.kagiroi_dict.query_matrix(node1.right_id, node2.left_id) +
-                                   Module.kagiroi_dict.query_matrix(node2.right_id, eos_left_id)+
-                                   Module.kagiroi_dict.get_prefix_penalty(node1.left_id)+
-                                   Module.kagiroi_dict.get_suffix_penalty(node2.right_id)
-                table.insert(candidates, {
-                    surface = node1.surface .. node2.surface,
-                    candidate = node1.candidate .. node2.candidate,
-                    cost = total_cost_2,
-                    left_id = node1.left_id,
-                    right_id = node2.right_id,
-                })
-            end
-        end
-    end
-    table.sort(candidates, function(a, b)
-        return a.cost < b.cost
-    end)
-    
-    local index = 0
     local best_n_node_iter = function()
-        index = index + 1
-        if index <= #candidates then
-            local cand = candidates[index]
-            if index < #candidates then
-                next_node_cost = candidates[index+1].cost
-            else
-                next_node_cost = math.huge
-            end
-            if (utf8.len(cand.surface) < max_dummy_surface_len) then
-                table.insert(surface, {cand.surface, cand.surface})
-                table.insert(surface, {cand.surface,Module.hira2kata_opencc:convert(cand.surface)})
-            end
-            high_quality_count = high_quality_count - 1
-            return Node:new(
-                cand.left_id,
-                cand.right_id,
-                cand.cost,
-                cand.surface,
-                cand.candidate
-            )
+        if current_index > #Module.lattice[1] then
+            return nil
+        elseif current_index == #Module.lattice[1] then
+            next_node_cost = math.huge
+        else
+            next_node_cost = Module.lattice[1][current_index + 1].cost
         end
-        return nil
+        local best_n_node = Module.lattice[1][current_index]
+        if (utf8.len(best_n_node.surface) < max_dummy_surface_len) then
+            table.insert(surface, {best_n_node.surface, best_n_node.surface})
+            table.insert(surface, {best_n_node.surface,Module.hira2kata_opencc:convert(best_n_node.surface)})
+        end
+        high_quality_count = high_quality_count - 1
+        current_index = current_index + 1
+        return best_n_node
     end
     return function()
         if next_node_cost >= high_quality_cost or high_quality_count <= 0 then
