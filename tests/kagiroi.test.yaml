@@ -6,7 +6,7 @@ deploy:
       - send: a
         assert: cand[1].text == "あ"
       - send: an
-        assert: cand[1].text == "案"
+        assert: cand[1].text == "あん"
       - send: ana
         assert: cand[1].text == "穴"
       - send: anat
@@ -35,8 +35,8 @@ deploy:
         assert: cand[2].text == "流しそこねた少女の血"
       
       # partial selection
-      - send: 'daisukidattakotomo32231'
-        assert: commit == "大好きだった事も"
+      - send: 'daisukidattakotomo31'
+        assert: commit == "大好きだったことも"
 
   nohenkan:
     tests:
