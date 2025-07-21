@@ -12,7 +12,7 @@ local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
     lattice = {}, -- lattice for viterbi algorithm
-    max_word_length = 100,
+    max_word_length = 15,
     lookup_cache = {},
     surface = "",
 }
@@ -162,7 +162,7 @@ function Module.analyze(input)
                         local cost_with_matrix = cost_without_matrix +
                             Module.kagiroi_dict.query_matrix(lex.right_id, open_node.left_id)
                         if open_node.type == "eos" then
-                            cost_with_matrix = Module.kagiroi_dict.get_suffix_penalty(lex.right_id)
+                            cost_with_matrix = cost_with_matrix + Module.kagiroi_dict.get_suffix_penalty(lex.right_id)
                         end
                         if cost_with_matrix < node.cost then
                             node.cost = cost_with_matrix
