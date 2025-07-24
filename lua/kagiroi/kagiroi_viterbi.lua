@@ -266,12 +266,14 @@ end
 function Module._assemble(materialized)
     local lex_table = materialized.lex_table
     local candidate = ""
+    local surface = ""
     for _, node in ipairs(lex_table) do
         candidate = candidate .. node.candidate
+        surface = surface .. node.surface
     end
 
     local assem = {
-        surface = Module.surface,
+        surface = surface,
         candidate = candidate,
         cost = materialized.cost,
         left_id = lex_table[2].left_id,
@@ -318,7 +320,7 @@ function Module._assemble(materialized)
         log.info(string.format("total: %.0f (check: %.0f)\t| conv.: %s\t| path: %s", total_cost, total_cost_check,
             assem.candidate, table.concat(path_str_parts, " -> ")))
     end
-    debug_func()
+    -- debug_func()
     return assem
 end
 
@@ -445,7 +447,7 @@ function Module.best_n_prefix()
                 break
             end
         end
-        log.info("assem. prefix")
+        -- log.info("assem. prefix")
         return Module._assemble({
             lex_table = lex_table,
             cost = cost
