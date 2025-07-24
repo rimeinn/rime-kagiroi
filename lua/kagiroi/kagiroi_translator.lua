@@ -187,9 +187,13 @@ function Top.henkan(input, seg, env)
     
     -- 2) find the best n sentences matching the complete input
     viterbi.analyze(trimmed)
-    local sentences = viterbi.best_n(env.sentence_size)
-    for _, sentence in ipairs(sentences) do
-        yield(lex2cand( seg, sentence, env))
+    local iter = viterbi.best_n()
+    local sentence_size = env.sentence_size
+    local sentence = iter()
+    while sentence ~= nil and sentence_size > 0 do
+        yield(lex2cand(seg, sentence, env))
+        sentence = iter()
+        sentence_size = sentence_size - 1
     end
 
     -- 3) find the best n prefixes for partial selecting,
@@ -261,7 +265,6 @@ end
 
 function Top.custom_phrase(input, seg, env)
     local xlation = env.table_xlator:query(input, seg)
-    log.info("hello")
     if xlation then
         for cand in xlation:iter() do
             if cand.type ~= "table" then
