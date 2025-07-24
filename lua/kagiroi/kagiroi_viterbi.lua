@@ -429,6 +429,9 @@ function Module.best_n_prefix()
     end
     return Module._weave_dummy_iter(function()
         local deviation = collector:pop()
+        if not deviation then
+            return nil
+        end
         local cur_node = deviation.sect_node
         local cost = Module.kagiroi_dict.query_matrix(0, cur_node.left_id) +
                          Module.kagiroi_dict.get_prefix_penalty(cur_node.left_id)

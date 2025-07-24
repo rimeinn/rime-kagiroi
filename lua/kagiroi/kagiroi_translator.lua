@@ -200,7 +200,7 @@ function Top.henkan(input, seg, env)
     --    insert some kanji candidates after high-quality candidates
     local best_n = viterbi.best_n_prefix()
     local kanji_emitted = false
-    local KANJI_CANDIDATE_COST_THRESHOLD = 460400
+    local KANJI_CANDIDATE_COST_THRESHOLD = 36832
     for phrase in best_n do
         if not kanji_emitted and phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD then
             Top.kanji(trimmed, seg, env)
