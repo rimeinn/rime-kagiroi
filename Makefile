@@ -22,6 +22,7 @@ $(MATRIX_DEF):
 
 $(LEX_CSV):
 	cat mozc/src/data/dictionary_oss/dictionary*.txt | tr "\\t" "," | grep -v "^," > lua/kagiroi/dic/lex.csv
+	cat lua/kagiroi/dic/lex_manual.csv >> lua/kagiroi/dic/lex.csv
 	cat lua/kagiroi/dic/dictionary*.txt | python3 tools/convert_jisho.py mozc/src/data/dictionary_oss/id.def 8000 | tr "\\t" "," | grep -v "^," >> lua/kagiroi/dic/lex.csv
 	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then grep -v -x -f lua/kagiroi/dic/lex_excluded.csv lua/kagiroi/dic/lex.csv > lua/kagiroi/dic/lex.csv.tmp && mv lua/kagiroi/dic/lex.csv.tmp lua/kagiroi/dic/lex.csv; fi
 

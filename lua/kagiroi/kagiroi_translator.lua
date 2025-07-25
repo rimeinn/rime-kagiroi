@@ -11,7 +11,17 @@ local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
 local kHenkan = false
 local kMuhenkan = true
+local youon = {"ぁ","ぃ","ぅ","ぇ","ぉ","ゃ","ゅ","ょ"}
 
+local function start_with_youon(str)
+    local initial = kagiroi.utf8_sub(str, 1, 1)
+    for _, char in ipairs(youon) do
+        if initial == char then
+            return true
+        end
+    end
+    return false
+end
 -- build rime candidates
 local function lex2cand(seg, lex, env)
     local dest_hiragana_str = lex.surface
@@ -43,8 +53,16 @@ end
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
+    env.disable_user_dict_for_patterns = env.engine.schema.config:get_list("kagiroi/translator/disable_user_dict_for_patterns")
+    
     env.query_userdict = function(input)
+        if not input or input == "" or start_with_youon(input) then
+            return function()
+                return nil
+            end
+        end
         env.mem:user_lookup(input .. " \t", true)
+        
         local next_func, self = env.mem:iter_user()
         return function()
             local entry = next_func(self)
