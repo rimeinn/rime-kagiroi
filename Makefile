@@ -27,9 +27,11 @@ $(LEX_CSV):
 	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then grep -v -x -f lua/kagiroi/dic/lex_excluded.csv lua/kagiroi/dic/lex.csv > lua/kagiroi/dic/lex.csv.tmp && mv lua/kagiroi/dic/lex.csv.tmp lua/kagiroi/dic/lex.csv; fi
 
 nico:
-	rm -r .temp
+	rm -rf .temp
 	mkdir -p .temp
 	curl -L -o .temp/nicoime.zip http://tkido.com/nicoime/nicoime.zip
 	cd .temp && unzip -o nicoime.zip
 	iconv -f UTF-16LE -t UTF-8 .temp/nicoime_msime.txt > lua/kagiroi/dic/dictionary_nico.txt
+	awk -F'\t' 'BEGIN{OFS="\t"} {gsub("ヴ", "ゔ", $$1); print}' lua/kagiroi/dic/dictionary_nico.txt > lua/kagiroi/dic/dictionary_nico.txt.tmp && mv lua/kagiroi/dic/dictionary_nico.txt.tmp lua/kagiroi/dic/dictionary_nico.txt
+	python3 tools/filter_nico_dictionary.py
 	
