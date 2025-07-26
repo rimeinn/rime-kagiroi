@@ -389,6 +389,9 @@ end
 -- column of lattice: start position of the surface
 -- @param input string
 function Module.analyze(input)
+    if input == Module.surface then
+        return
+    end
     -- log.info("anl. " .. input)
     Module.surface = input
     Module._build_lattice()
