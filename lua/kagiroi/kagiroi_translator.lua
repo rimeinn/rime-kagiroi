@@ -11,7 +11,17 @@ local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
 local kHenkan = false
 local kMuhenkan = true
+local youon = {"ぁ","ぃ","ぅ","ぇ","ぉ","ゃ","ゅ","ょ"}
 
+local function start_with_youon(str)
+    local initial = kagiroi.utf8_sub(str, 1, 1)
+    for _, char in ipairs(youon) do
+        if initial == char then
+            return true
+        end
+    end
+    return false
+end
 -- build rime candidates
 local function lex2cand(seg, lex, env)
     local dest_hiragana_str = lex.surface
@@ -43,8 +53,16 @@ end
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
+    env.disable_user_dict_for_patterns = env.engine.schema.config:get_list("kagiroi/translator/disable_user_dict_for_patterns")
+    
     env.query_userdict = function(input)
+        if not input or input == "" or start_with_youon(input) then
+            return function()
+                return nil
+            end
+        end
         env.mem:user_lookup(input .. " \t", true)
+        
         local next_func, self = env.mem:iter_user()
         return function()
             local entry = next_func(self)
@@ -187,16 +205,20 @@ function Top.henkan(input, seg, env)
     
     -- 2) find the best n sentences matching the complete input
     viterbi.analyze(trimmed)
-    local sentences = viterbi.best_n(env.sentence_size)
-    for _, sentence in ipairs(sentences) do
-        yield(lex2cand( seg, sentence, env))
+    local iter = viterbi.best_n()
+    local sentence_size = env.sentence_size
+    local sentence = iter()
+    while sentence ~= nil and sentence_size > 0 do
+        yield(lex2cand(seg, sentence, env))
+        sentence = iter()
+        sentence_size = sentence_size - 1
     end
 
     -- 3) find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
     local best_n = viterbi.best_n_prefix()
     local kanji_emitted = false
-    local KANJI_CANDIDATE_COST_THRESHOLD = 460400
+    local KANJI_CANDIDATE_COST_THRESHOLD = 36832
     for phrase in best_n do
         if not kanji_emitted and phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD then
             Top.kanji(trimmed, seg, env)
@@ -261,7 +283,6 @@ end
 
 function Top.custom_phrase(input, seg, env)
     local xlation = env.table_xlator:query(input, seg)
-    log.info("hello")
     if xlation then
         for cand in xlation:iter() do
             if cand.type ~= "table" then

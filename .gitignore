@@ -27,3 +27,6 @@ mozc/
 rime_*
 installation.yaml
 kagiroi.txt
+lua/kagiroi/dic/dictionary_*
+lua/kagiroi/dic/lex.csv
+lua/kagiroi/dic/matrix.def
