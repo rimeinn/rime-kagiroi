@@ -28,7 +28,7 @@
   schema/dependencies/+:
     - kagiroi
   engine/segmentors/@before 5: affix_segmentor@kagiroi # 关于顺序问题，可以参考https://github.com/rime/librime/pull/959
-  engine/processors/@before 5: lua_processor@*kagiroi/kagiroi_kana_speller # kagiroi使用到的自定义speller，至少要放到rime自带speller的前面，如果打字发现编辑区仍然没有出现平假名，有可能是受到上游的processor的影响，可以试着把这个speller的顺序往前调整
+  engine/processors/@before 5: lua_processor@*kagiroi/kagiroi_kana_speller # kagiroi使用到的自定义speller，至少要放到rime自带recognizer的前面，如果打字发现编辑区仍然没有出现平假名，有可能是受到上游的processor的影响，可以试着把这个speller的顺序往前调整
 
   engine/translators/+:
     - lua_translator@*kagiroi/kagiroi_translator #kagiroi的主要translator，负责把平假名转换成候选
