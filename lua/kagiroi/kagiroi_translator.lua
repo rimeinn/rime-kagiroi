@@ -192,7 +192,6 @@ function Top.func(input, seg, env)
 end
 
 function Top.henkan(input, seg, env)
-    local start_time = os.clock()
     local trimmed = kagiroi.trim_non_kana_trailing(input)
     if env.gikun_enable then
         trimmed = string.gsub(trimmed, env.gikun_delimiter .. ".*$", "")
@@ -205,9 +204,7 @@ function Top.henkan(input, seg, env)
     Top.custom_phrase(trimmed, seg, env)
     -- 2) find the best n sentences matching the complete input
 
-    start_time = os.clock()
     viterbi.analyze(trimmed)
-    start_time = os.clock()
     local iter = viterbi.best_n()
     local sentence_size = env.sentence_size
     local sentence = iter()

@@ -66,7 +66,6 @@ function Top.init(env)
     -- clean broken bytes & justify caret position
     local last_caret_pos = 0
     env.update_notifier = env.engine.context.update_notifier:connect(function(ctx)
-        local start_time = os.clock()
         local input = ctx.input
         local len, error_pos = utf8.len(input)
         if not len then
@@ -99,7 +98,6 @@ function Top.fini(env)
 end
 
 function Top.func(key_event, env)
-    local start_time = os.clock()
     if  key_event:release() or key_event:ctrl() or key_event:alt() or key_event:super() then
         return kNoop
     end
@@ -130,7 +128,6 @@ function Top.func(key_event, env)
         return kNoop
     end
     local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
-    start_time = os.clock()
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
     if cand then
         local new_text = cand.text .. alphabet_text:sub(cand._end + 1)
@@ -145,7 +142,6 @@ function Top.func(key_event, env)
                 context:pop_input(#last_utf8_char)
             end
         end
-        start_time = os.clock()
         context:push_input(new_text)
         return kAccepted
     end
