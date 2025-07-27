@@ -203,12 +203,10 @@ function Top.henkan(input, seg, env)
 
     -- 1) user custom phrase
     Top.custom_phrase(trimmed, seg, env)
-    log.info("custom_phrase elapsed:"..((os.clock() - start_time)*1000).."ms")
     -- 2) find the best n sentences matching the complete input
 
     start_time = os.clock()
     viterbi.analyze(trimmed)
-    log.info("analyze elapsed:"..((os.clock() - start_time)*1000).."ms")
     start_time = os.clock()
     local iter = viterbi.best_n()
     local sentence_size = env.sentence_size
@@ -217,7 +215,6 @@ function Top.henkan(input, seg, env)
         yield(lex2cand(seg, sentence, env))
         sentence = iter()
         sentence_size = sentence_size - 1
-        log.info("bestn elapsed:"..((os.clock() - start_time)*1000).."ms")
     end
 
     -- 3) find the best n prefixes for partial selecting,

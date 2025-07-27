@@ -12,9 +12,7 @@ local Module = {
     kagiroi_dict = require("kagiroi/kagiroi_dict"),
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
     lattice = {}, -- lattice for viterbi algorithm
-    max_word_length = 100,
     start_index_by_col = {},
-    detour_by_end_pos = {},
     search_beam_width = 50,
     lookup_cache = nil,
     lookup_cache_size = 50000,
@@ -49,7 +47,7 @@ function Node:new(left_id, right_id, cost, surface, candidate, type)
     o._end = -1 -- end pos
     o.wcost = 0 -- word cost
     o.detour = {}
-    o.r_detour = {}
+    o.rcost = math.huge
     return o
 end
 
@@ -98,9 +96,7 @@ end
 -- @param left_id int
 -- @return float
 function Module._get_matrix_cost(right_id, left_id)
-    local key = right_id .. ":" .. left_id
     local cache = Module.matrix_cache
-
     local cache_set = cache:get(right_id)
     if cache_set then
         local cached_cost = cache_set[left_id]
@@ -172,7 +168,6 @@ function Module._merge_iter(iter1, iter2)
 end
 
 function Module._init_lattice()
-    Module.lattice[0] = {}
     -- set the bos/eos node
     local eos = Node:new(0, 0, 0, "", "", "eos")
     local bos = Node:new(0, 0, 0, "", "", "bos")
@@ -180,7 +175,10 @@ function Module._init_lattice()
     bos._end = 0
     eos.start = Module.surface_len + 1
     eos._end = Module.surface_len + 1
+    Module.lattice[0] = {}
+    Module.lattice[eos._end] = {}
     Module.lattice[0][1] = bos
+    Module.lattice[eos._end][1] = eos
     Module.bos = bos
     Module.eos = eos
 end
@@ -200,15 +198,43 @@ function Module._build_detour(node)
             delta = delta,
             node = pnode
         })
-        table.insert(Module.detour_by_end_pos[node._end], {
-            from = pnode,
-            to = node,
-            conn_cost = conn_cost
-        })
     end
     table.sort(node.detour, function(a, b)
         return a.delta < b.delta
     end)
+end
+
+function Module._build_reverse_detour()
+    Module.eos.rcost = 0
+    local max_width = math.min(20, Module.surface_len)
+    for j = max_width, 0, -1 do
+        for _, node in ipairs(Module.lattice[j] or {}) do
+            local successors = {}
+            if j == max_width then
+                table.insert(successors, Module.eos)
+            else
+                successors = Module._find_nodes_starting_at(node._end + 1)
+            end
+            local best_successor = nil
+            node.rcost = math.huge
+            local second_best_cost = node.rcost
+            for _, succ_node in ipairs(successors) do
+                local new_rcost = node.wcost + Module._get_matrix_cost(node.right_id, succ_node.left_id)  + succ_node.rcost
+                if succ_node.type == "eos" then
+                    new_rcost = new_rcost + Module._get_suffix_penalty(node.right_id)
+                end
+                if new_rcost < node.rcost then
+                    second_best_cost = node.rcost
+                    node.rcost = new_rcost
+                    best_successor = succ_node
+                elseif new_rcost < second_best_cost then
+                    second_best_cost = new_rcost
+                end
+            end
+            node.rdelta = second_best_cost - node.rcost
+            node.rsucc = best_successor
+        end
+    end
 end
 
 function Module._conn_eos()
@@ -228,7 +254,6 @@ function Module._conn_eos()
     eos.cost = min_calculated_cost
     eos.pre_index_row = min_index_row
     eos.pre_index_col = Module.surface_len
-    Module.detour_by_end_pos[eos._end] = {}
     Module._build_detour(eos)
 end
 
@@ -279,7 +304,6 @@ function Module._extend_to(j)
         end
         ::continue::
     end
-    Module.detour_by_end_pos[j] = {}
     for _, node in ipairs(Module.lattice[j]) do
         local i = node.start
         if not Module.start_index_by_col[j] then
@@ -345,23 +369,6 @@ function Module._materialize(deviation)
     return deviation._materialized
 end
 
-function Module._materialize_state(result_state)
-    local lex_table = {Module.eos} -- compatible with _assemble, which assumes eos is at 1
-    local surface_list = {}
-    local current_state = result_state
-    
-    -- Backtrack from the final state to BOS
-    while current_state and current_state.node and current_state.node.type ~= "bos" do
-        table.insert(lex_table,  current_state.node)
-        current_state = current_state.parent_state
-    end
-    
-    return {
-        lex_table = lex_table,
-        cost = result_state.cost
-    }
-end
-
 -- assemble the lex and cost
 function Module._assemble(materialized)
     local lex_table = materialized.lex_table
@@ -419,7 +426,7 @@ function Module._assemble(materialized)
         log.info(string.format("total: %.0f (check: %.0f)\t| conv.: %s\t| path: %s", total_cost, total_cost_check,
             assem.candidate, table.concat(path_str_parts, " -> ")))
     end
-    debug_func()
+    -- debug_func()
     return assem
 end
 
@@ -509,7 +516,6 @@ function Module.analyze(input)
             for j = prefix_len + 1, old_len do
                 Module.lattice[j] = nil
                 Module.start_index_by_col[j] = nil
-                Module.detour_by_end_pos[j] = nil
             end
         end
         -- extend
@@ -523,61 +529,76 @@ end
 -- generate the nbest list for the prefix
 -- @return iterator of nbest prefixes
 function Module.best_n_prefix()
-    local pq = PriorityQueue()
-    local initial_path_state = {
-        type = "PATH",
-        node = Module.bos,
-        parent_state = nil,
-        g_cost = 0,
-        segment = 0
-    }
-    pq:put(initial_path_state, 0)
+    Module._build_reverse_detour()
+    local sect_nodes = Module._find_nodes_starting_at(1)
+    local collector = PriorityQueue()
+    -- find min rcost + pref + conn
+    local min_cost = math.huge
+    for _, sect_node in ipairs(sect_nodes) do
+        local new_cost = sect_node.rcost + 
+                        Module._get_prefix_penalty(sect_node.left_id) +
+                        Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id)
+        if new_cost < min_cost then
+            min_cost = new_cost
+        end
+    end
+
+    for _, sect_node in ipairs(sect_nodes) do
+        local sect_delta = sect_node.rcost +Module._get_prefix_penalty(sect_node.left_id) +
+                            Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
+        local cur_node = sect_node
+        local next_node = sect_node.rsucc
+        while next_node do
+            if segmentor.is_boundary_internal(cur_node.right_id, next_node.left_id) then
+                collector:put({
+                    node = cur_node,
+                    sect_node = sect_node,
+                    delta = sect_delta
+                }, sect_delta)
+                break
+            else
+                if cur_node.rdelta < math.huge then
+                    local delta = cur_node.rdelta + sect_delta
+                    collector:put({
+                        node = cur_node,
+                        sect_node = sect_node,
+                        delta = delta -- detour cost
+                    }, delta)
+                end
+            end
+            cur_node = next_node
+            next_node = cur_node.rsucc
+        end
+    end
     return Module._weave_dummy_iter(function()
+        local deviation = collector:pop()
+        if not deviation then
+            return nil
+        end
+        local cur_node = deviation.sect_node
+        local cost = Module._get_matrix_cost(0, cur_node.left_id) + Module._get_prefix_penalty(cur_node.left_id)
+        local lex_table = {}
         while true do
-            local state = pq:pop()
-            if state == nil then
-                return nil
+            -- keep it reverse to compatible with _assemble
+            table.insert(lex_table, 1, cur_node)
+            cost = cost + cur_node.wcost
+            if cur_node == deviation.node then
+                break
             end
-            if state.type == "RESULT" then
-                return Module._assemble(Module._materialize_state(state))
-            end
-            local current_path_state = state
-            local node = state.node
-            local next_pos = node._end + 1
-            local successor_nodes = Module._find_nodes_starting_at(next_pos)
-            for _, successor_node in ipairs(successor_nodes) do
-                local g_cost_to_next = current_path_state.g_cost +
-                                           Module._get_matrix_cost(node.right_id, successor_node.left_id) +
-                                           successor_node.wcost
-                if node.type == "bos" then
-                    g_cost_to_next = g_cost_to_next + Module._get_prefix_penalty(successor_node.left_id)
-                end
-                local extended_path = {
-                    type = "PATH",
-                    node = successor_node,
-                    parent_state = current_path_state,
-                    cost = current_path_state.g_cost, -- cost of path
-                    segment = current_path_state.segment + 1
-                }
-                if segmentor.is_boundary_internal(node.right_id, successor_node.left_id) and node.type ~= "bos" then
-                    extended_path.segment = current_path_state.segment + 1
-                    pq:put({
-                        type = "RESULT",
-                        node = node,
-                        parent_state = current_path_state.parent_state,
-                        cost = g_cost_to_next,
-                        segment = current_path_state.segment + 1
-                    }, g_cost_to_next)
-                end
-                pq:put({
-                    type = "PATH",
-                    node = successor_node,
-                    parent_state = current_path_state,
-                    g_cost = g_cost_to_next,
-                    segment = current_path_state.segment
-                }, g_cost_to_next)
+            local next_node = cur_node.rsucc
+            if next_node then
+                cost = cost + Module._get_matrix_cost(cur_node.right_id, next_node.left_id)
+                cur_node = next_node
+            else
+                break
             end
         end
+        table.insert(lex_table,1, Module.eos)
+        -- log.info("assem. prefix")
+        return Module._assemble({
+            lex_table = lex_table,
+            cost = cost
+        })
     end)
 end
 
@@ -590,7 +611,6 @@ function Module.best_n()
         end
     end
     local deviations_tree = PriorityQueue()
-    local phase = 0
     local root = {
         is_root = true,
         eos = Module.eos,
