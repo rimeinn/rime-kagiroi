@@ -145,7 +145,7 @@ function Module._unpack_lex(key, value)
     local parts = {}
 
     -- key: LEX:{surface}:{left_id}:{right_id}:{candidate} eg. LEX:いい:2426:2426:良い
-    local surface, left_id, right_id, candidate = key:match("LEX:([^:]+):(%d+):(%d+):([^:]+)")
+    local surface, left_id, right_id, candidate = key:match("^LEX:([^:]+):(%d+):(%d+):(.*)$")
 
     -- value: cost eg. 100
     local cost = value
