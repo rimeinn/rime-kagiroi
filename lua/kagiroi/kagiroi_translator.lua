@@ -192,6 +192,7 @@ function Top.func(input, seg, env)
 end
 
 function Top.henkan(input, seg, env)
+    local start_time = os.clock()
     local trimmed = kagiroi.trim_non_kana_trailing(input)
     if env.gikun_enable then
         trimmed = string.gsub(trimmed, env.gikun_delimiter .. ".*$", "")
@@ -202,9 +203,13 @@ function Top.henkan(input, seg, env)
 
     -- 1) user custom phrase
     Top.custom_phrase(trimmed, seg, env)
-    
+    log.info("custom_phrase elapsed:"..((os.clock() - start_time)*1000).."ms")
     -- 2) find the best n sentences matching the complete input
+
+    start_time = os.clock()
     viterbi.analyze(trimmed)
+    log.info("analyze elapsed:"..((os.clock() - start_time)*1000).."ms")
+    start_time = os.clock()
     local iter = viterbi.best_n()
     local sentence_size = env.sentence_size
     local sentence = iter()
@@ -212,13 +217,14 @@ function Top.henkan(input, seg, env)
         yield(lex2cand(seg, sentence, env))
         sentence = iter()
         sentence_size = sentence_size - 1
+        log.info("bestn elapsed:"..((os.clock() - start_time)*1000).."ms")
     end
 
     -- 3) find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
     local best_n = viterbi.best_n_prefix()
     local kanji_emitted = false
-    local KANJI_CANDIDATE_COST_THRESHOLD = 36832
+    local KANJI_CANDIDATE_COST_THRESHOLD = 368320
     for phrase in best_n do
         if not kanji_emitted and phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD then
             Top.kanji(trimmed, seg, env)

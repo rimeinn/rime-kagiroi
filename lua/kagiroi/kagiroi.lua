@@ -63,7 +63,7 @@ function Module.utf8_common_prefix(s1, s2)
             return Module.utf8_sub(s1, 1, i - 1), Module.utf8_sub(s1, i), Module.utf8_sub(s2, i)
         end
     end
-    return Module.utf8_sub(s1, 1, len), Module.utf8_sub(s1, len + 1), Module.utf8_sub(s2, len + 1)
+    return Module.utf8_sub(s1, 1, len)
 end
 
 function Module.utf8_char_iter(s)

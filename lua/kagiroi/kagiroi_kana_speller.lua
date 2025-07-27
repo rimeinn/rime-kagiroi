@@ -61,10 +61,12 @@ function Top.init(env)
     env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/alphabet")
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
+    env.kana_speller_cache = {}
 
     -- clean broken bytes & justify caret position
     local last_caret_pos = 0
     env.update_notifier = env.engine.context.update_notifier:connect(function(ctx)
+        local start_time = os.clock()
         local input = ctx.input
         local len, error_pos = utf8.len(input)
         if not len then
@@ -85,6 +87,7 @@ function Top.init(env)
                 last_caret_pos = ctx.caret_pos
             end
         end
+        log.info("up noti elapsed:"..((os.clock() - start_time)*1000).."ms")
     end, 0)
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
     env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/delimiter") or ";"
@@ -97,6 +100,7 @@ function Top.fini(env)
 end
 
 function Top.func(key_event, env)
+    local start_time = os.clock()
     if  key_event:release() or key_event:ctrl() or key_event:alt() or key_event:super() then
         return kNoop
     end
@@ -127,7 +131,9 @@ function Top.func(key_event, env)
         return kNoop
     end
     local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
+    start_time = os.clock()
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
+    log.info("kana elapsed:"..((os.clock() - start_time)*1000).."ms")
     if cand then
         local new_text = cand.text .. alphabet_text:sub(cand._end + 1)
         if #remaining_alphabet > 0 then
@@ -141,19 +147,25 @@ function Top.func(key_event, env)
                 context:pop_input(#last_utf8_char)
             end
         end
+        start_time = os.clock()
         context:push_input(new_text)
+        log.info("spller push elapsed:"..((os.clock() - start_time)*1000).."ms")
         return kAccepted
     end
     return kNoop
 end
 
 function Top.query_roma2hira_xlator(input, env)
+    if env.kana_speller_cache[input] then
+        return env.kana_speller_cache[input]
+    end
     local pseudo_seg = Segment(0, #input)
     pseudo_seg.tags = Set{"kagiroi"}
     local xlation = env.roma2hira_xlator:query(input, pseudo_seg)
     if xlation then
         local nxt, thisobj = xlation:iter()
         local cand = nxt(thisobj)
+        env.kana_speller_cache[input] = cand
         return cand
     end
     return nil
