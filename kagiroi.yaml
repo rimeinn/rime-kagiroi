@@ -6,7 +6,9 @@ key_bindings:
       - { when: has_menu, accept: equal, send: Page_Down }
   kagiroi_switches:
     __append:
-      - { when: has_menu, accept: "Control+c", toggle: composition_mode}
+      - { when: composing, accept: "Control+u", set_option: hiragana}
+      - { when: composing, accept: "Control+i", set_option: katakana}
+      - { when: composing, accept: "Control+o", set_option: hw_katakana}
 
 alphabet:
   3_dan:
@@ -56,7 +58,6 @@ punct:
       '{' : [ 『, 〖, ｛ ]
       '}' : [ 』, 〗, ｝ ]
     half_shape:
-      ' ' : { commit: '　' } # comment out this line to disable full-width space
       ',' : [ 、, ・, ，,]
       '.' : [ 。, …, ．, . ]
       '<' : [ ＜, 〈,  《 ]
@@ -98,7 +99,6 @@ punct:
       '{' : [」,”,』,】,］ ]
       '+' : [「,”,』,】,］ ]
     half_shape:
-      ' ' : { commit: '　' }
       '<' : [ 、, ，,  ・ ]
       '>' : [ 。,．,.,…]
       '/' : [ ・, …, /, ／, ÷]

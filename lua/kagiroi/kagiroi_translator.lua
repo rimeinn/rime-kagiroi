@@ -1,17 +1,13 @@
 -- kagiroi_translator.lua
 -- main translator of kagiroi
-
 -- license: GPLv3
--- version: 0.2.0
+-- version: 0.2.1
 -- author: kuroame
-
 local kagiroi = require("kagiroi/kagiroi")
 
 local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
-local kHenkan = false
-local kMuhenkan = true
-local youon = {"ぁ","ぃ","ぅ","ぇ","ぉ","ゃ","ゅ","ょ"}
+local youon = {"ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ゃ", "ゅ", "ょ"}
 
 local function start_with_youon(str)
     local initial = kagiroi.utf8_sub(str, 1, 1)
@@ -42,19 +38,17 @@ local function calculate_userdict_cost(surface, commit_count)
     local base_cost = 5000
     local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
     local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-    
-    local cost = math.max(
-        500,
-        base_cost * length_penalty / frequency_bonus
-    )
+
+    local cost = math.max(500, base_cost * length_penalty / frequency_bonus)
     return math.floor(cost)
 end
 
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
-    env.disable_user_dict_for_patterns = env.engine.schema.config:get_list("kagiroi/translator/disable_user_dict_for_patterns")
-    
+    env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
+        "kagiroi/translator/disable_user_dict_for_patterns")
+
     env.query_userdict = function(input)
         if not input or input == "" or start_with_youon(input) then
             return function()
@@ -62,7 +56,7 @@ function Top.init(env)
             end
         end
         env.mem:user_lookup(input .. " \t", true)
-        
+
         local next_func, self = env.mem:iter_user()
         return function()
             local entry = next_func(self)
@@ -91,7 +85,8 @@ function Top.init(env)
         end
     end
     env.allow_table_word_in_sentence = env.engine.schema.config:get_bool("kagiroi/translator/sentence/allow_table_word")
-    env.table_word_cost = env.engine.schema.config:get_int("kagiroi/translator/sentence/table_word_connection_cost") or 1000
+    env.table_word_cost = env.engine.schema.config:get_int("kagiroi/translator/sentence/table_word_connection_cost") or
+                              1000
     viterbi.init(env)
     viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
@@ -141,7 +136,7 @@ function Top.init(env)
             end
             local sentry = DictEntry()
             sentry.text = stext .. "|" .. sleft_id .. " " .. sright_id
-            sentry.custom_code =  gikun_yomikata or kagiroi.append_trailing_space(scustom_code)
+            sentry.custom_code = gikun_yomikata or kagiroi.append_trailing_space(scustom_code)
             env.mem:update_userdict(sentry, 1, "")
         else
             local dictentry = commit:get()[1]
@@ -179,16 +174,11 @@ function Top.func(input, seg, env)
         return
     end
     env.mem:finish_session()
-    local composition_mode = env.engine.context:get_option("composition_mode") or kHenkan
     if env.gikun_enable then
         Top.gikun(input, seg, env)
     end
     local projected = env.mapping_projection:apply(input, true)
-    if composition_mode == kHenkan then
-        Top.henkan(projected, seg, env)
-    elseif composition_mode == kMuhenkan then
-        Top.muhenkan(projected, seg, env)
-    end
+    Top.henkan(projected, seg, env)
 end
 
 function Top.henkan(input, seg, env)
@@ -199,7 +189,11 @@ function Top.henkan(input, seg, env)
     if trimmed == "" then
         return
     end
-
+    local katakana = env.engine.context:get_option("katakana")
+    local hw_katakana = env.engine.context:get_option("hw_katakana")
+    if katakana or hw_katakana then
+        Top.katakana(trimmed, seg, hw_katakana, env)
+    end
     -- 1) user custom phrase
     Top.custom_phrase(trimmed, seg, env)
     -- 2) find the best n sentences matching the complete input
@@ -229,21 +223,6 @@ function Top.henkan(input, seg, env)
     if not kanji_emitted then
         Top.kanji(trimmed, seg, env)
     end
-end
-
-function Top.muhenkan(input,seg, env)
-    local hiragana_simp_cand = Candidate("kagiroi", seg.start, seg._end, input, "")
-    hiragana_simp_cand.preedit = input
-    yield(hiragana_simp_cand)
-    local katakana_str = env.hira2kata_opencc:convert(input)
-    local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str, "")
-    katakana_cand.preedit = katakana_str
-    yield(katakana_cand)
-    local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
-    local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end,
-        katakana_halfwidth_str, "")
-    katakana_halfwidth_cand.preedit = katakana_halfwidth_str
-    yield(katakana_halfwidth_cand)
 end
 
 function Top.gikun(input, seg, env)
