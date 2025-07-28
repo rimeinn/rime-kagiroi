@@ -85,8 +85,6 @@ function Top.init(env)
         end
     end
     env.allow_table_word_in_sentence = env.engine.schema.config:get_bool("kagiroi/translator/sentence/allow_table_word")
-    env.table_word_cost = env.engine.schema.config:get_int("kagiroi/translator/sentence/table_word_connection_cost") or
-                              1000
     viterbi.init(env)
     viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
@@ -165,6 +163,7 @@ function Top.fini(env)
     env.kanji_xlator = nil
     env.table_xlator = nil
     env.delete_notifier:disconnect()
+    env.commit_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
 end

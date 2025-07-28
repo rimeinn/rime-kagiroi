@@ -10,6 +10,7 @@ local Module = {
     dic_db = nil
 }
 local ref_count = 0
+local kNounId = 1920
 local pathsep = (package.config or '/'):sub(1, 1)
 -- open dict, if dict is empty, load from resources
 function Module.load()
@@ -82,10 +83,16 @@ end
 
 -- predefined matrix cost
 local PREDEFINED = {}
+-- -1: unknown -2 table word
 PREDEFINED["MATRIX:-1:-1"] = 1
 PREDEFINED["MATRIX:0:-1"] = 1
 PREDEFINED["MATRIX:-1:0"] = 1
 local PREDEFINED_WILDCARD = {}
+local allow_table_word = false
+
+function Module.allow_table_word()
+    allow_table_word = true
+end
 
 -- query matrix to get cost
 -- @param prev_id number
@@ -94,6 +101,14 @@ function Module.query_matrix(prev_id, next_id)
     local predef_wilcard = PREDEFINED_WILDCARD[prev_id] or PREDEFINED_WILDCARD[next_id]
     if predef_wilcard then
         return predef_wilcard
+    end
+    if allow_table_word then
+        if prev_id == -2 then
+            prev_id = kNounId
+        end
+        if next_id == -2 then
+            next_id = kNounId
+        end
     end
     local key = "MATRIX:" .. prev_id .. ":" .. next_id
     local predefined = PREDEFINED[key]
@@ -114,10 +129,6 @@ end
 
 function Module.get_suffix_penalty(prev_id)
     return Module.query_matrix(prev_id, -20)
-end
-
-function Module.set_table_word_cost(cost)
-    PREDEFINED_WILDCARD[-2] = cost
 end
 
 ------------------------------------------------------------

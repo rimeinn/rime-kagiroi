@@ -104,8 +104,6 @@ kagiroi:
 
       # allow table words to participate in sentence formation (only after being committed)
       allow_table_word: false
-      # connection cost of table words, greater number makes it harder to be in a sentence
-      table_word_connection_cost: 1000
     
     # Mapping input during translation, it's a convenient way to tweak input 
     # without affecting the behavior of the kana speller
