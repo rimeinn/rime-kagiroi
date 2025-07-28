@@ -271,8 +271,8 @@ function Top.kanji(input, seg, env)
             end
             local lex = {
                 candidate = cand.text,
-                left_id = -1,
-                right_id = -1,
+                left_id = 1920,
+                right_id = 1920,
                 surface = cand.preedit
             }
             yield(lex2cand(seg, lex, env))

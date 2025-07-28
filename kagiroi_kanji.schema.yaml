@@ -26,6 +26,6 @@ speller:
 translator:
   dictionary: kagiroi_kanji
   enable_completion: false
-  enable_user_dict: true
+  enable_user_dict: false
   enable_sentence: false
   tag: kagiroi
