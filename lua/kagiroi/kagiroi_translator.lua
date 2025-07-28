@@ -163,7 +163,6 @@ function Top.fini(env)
     env.kanji_xlator = nil
     env.table_xlator = nil
     env.delete_notifier:disconnect()
-    env.commit_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
 end
