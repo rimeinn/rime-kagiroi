@@ -234,9 +234,24 @@ function Top.gikun(input, seg, env)
         local delimiter_entry = DictEntry()
         delimiter_entry.text = ""
         delimiter_entry.custom_code = env.gikun_delimiter
-        local delimiter_cand = Phrase(env.mem, "kigun_delimiter", seg.start, seg.start + delimiter_len, delimiter_entry):toCandidate()
+        local delimiter_cand =
+            Phrase(env.mem, "kigun_delimiter", seg.start, seg.start + delimiter_len, delimiter_entry):toCandidate()
         delimiter_cand.quality = math.huge
         yield(ShadowCandidate(delimiter_cand, "kigun_delimiter_shadowed", "", "義訓"))
+    end
+end
+
+function Top.katakana(input, seg, is_half_width, env)
+    if is_half_width then
+        local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
+        local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end, katakana_halfwidth_str, "")
+        katakana_halfwidth_cand.preedit = katakana_halfwidth_str
+        yield(katakana_halfwidth_cand)
+    else
+        local katakana_str = env.hira2kata_opencc:convert(input)
+        local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str, "")
+        katakana_cand.preedit = katakana_str
+        yield(katakana_cand)
     end
 end
 

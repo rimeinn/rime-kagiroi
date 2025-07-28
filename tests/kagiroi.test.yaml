@@ -38,10 +38,13 @@ deploy:
       - send: 'daisukidattakotomo31'
         assert: commit == "大好きだったことも"
 
-  nohenkan:
+  katakana:
     tests:
-      - send: 'aida{Control+c}'
-        assert: cand[1].text == "あいだ" and cand[2].text == "アイダ" and cand[3].text == "ｱｲﾀﾞ"
+      - send: 'aida{Control+i}'
+        assert: cand[1].text == "アイダ" and preedit == "アイダ"
+      - send: 'aida{Control+o}'
+        assert: cand[1].text == "ｱｲﾀﾞ" and preedit == "ｱｲﾀﾞ"
+    
 
   nocrash:
     tests:
