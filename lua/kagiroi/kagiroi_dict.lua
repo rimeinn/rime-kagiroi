@@ -33,8 +33,8 @@ function Module.load()
         Module.dic_db:close()
         Module.dic_db:open_read_only()
     end
-    log.info("kagiroi lex count: " .. Module._get_lex_count())
-    log.info("kagiroi matrix count: " .. Module._get_matrix_count())
+    -- log.info("kagiroi lex count: " .. Module._get_lex_count())
+    -- log.info("kagiroi matrix count: " .. Module._get_matrix_count())
     ref_count = 1
 end
 
