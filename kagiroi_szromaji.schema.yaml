@@ -2,30 +2,11 @@ schema:
   schema_id: kagiroi_szromaji
   name: kagiroi layout (sz romaji)
   version: '20250714'
-  
-switches:
-  - name: ascii_mode
-    reset: 0
-    states: [ あ, 英字 ]
-  - name: full_shape
-    states: [ 半角, 全角 ]
-  - name: ascii_punct
-    states: [ 。，, ．， ]
-  
-engine:
-  processors:
-    - speller
-  segmentors:
-    - abc_segmentor
-  translators:
-    - script_translator
 
 speller:
   __include: kagiroi:/alphabet/3_dan
 
 translator:
   dictionary: kagiroi_szromaji
-  enable_completion: false
-  enable_user_dict: false
-  enable_sentence: true
-  tag: kagiroi
+
+__include: kagiroi:/preset_for_layout

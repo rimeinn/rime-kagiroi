@@ -18,6 +18,7 @@ switches:
     reset: 0
     states: [ あ, 英字 ]
   - options: [ hiragana, katakana, hw_katakana]
+    reset: 0
     states: [ ひらがな, カタカナ, ｶﾀｶﾅ]
   - name: full_shape
     states: [ 半角, 全角 ]

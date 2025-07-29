@@ -10,6 +10,22 @@ key_bindings:
       - { when: composing, accept: "Control+i", set_option: katakana}
       - { when: composing, accept: "Control+o", set_option: hw_katakana}
 
+
+preset_for_layout:
+  engine:
+    processors:
+      - speller
+    segmentors:
+      - abc_segmentor
+    translators:
+      - script_translator
+  translator:
+    enable_completion: false
+    enable_user_dict: false
+    enable_sentence: true
+    tag: kagiroi
+
+
 alphabet:
   3_dan:
     alphabet: -qwertyuiopasdfghjkl;zxcvbnm
