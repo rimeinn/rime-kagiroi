@@ -542,7 +542,8 @@ function Module.best_n_prefix()
             min_cost = new_cost
         end
     end
-
+    local good_section_tolerance = 1500
+    local max_detour_tolererance = 10000
     for _, sect_node in ipairs(sect_nodes) do
         local sect_delta = sect_node.rcost +Module._get_prefix_penalty(sect_node.left_id) +
                             Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
@@ -550,14 +551,19 @@ function Module.best_n_prefix()
         local next_node = sect_node.rsucc
         while next_node do
             if segmentor.is_boundary_internal(cur_node.right_id, next_node.left_id) then
-                collector:put({
-                    node = cur_node,
-                    sect_node = sect_node,
-                    delta = sect_delta
-                }, sect_delta)
-                break
-            else
-                if cur_node.rdelta < math.huge then
+                if sect_delta > good_section_tolerance then
+                    local rdelta = cur_node.rdelta
+                    if rdelta == math.huge then
+                        rdelta = 0
+                    end
+                    collector:put({
+                        node = cur_node,
+                        sect_node = sect_node,
+                        delta = sect_delta + rdelta -- detour cost
+                    }, sect_delta + rdelta)
+                    break
+                end
+                if cur_node.rdelta < max_detour_tolererance then
                     local delta = cur_node.rdelta + sect_delta
                     collector:put({
                         node = cur_node,
