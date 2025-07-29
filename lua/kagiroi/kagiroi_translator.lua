@@ -176,11 +176,11 @@ function Top.func(input, seg, env)
         Top.gikun(input, seg, env)
     end
     local projected = env.mapping_projection:apply(input, true)
-    Top.henkan(projected, seg, env)
+    Top.henkan(input, projected, seg, env)
 end
 
-function Top.henkan(input, seg, env)
-    local trimmed = kagiroi.trim_non_kana_trailing(input)
+function Top.henkan(input, projected, seg, env)
+    local trimmed = kagiroi.trim_non_kana_trailing(projected)
     if env.gikun_enable then
         trimmed = string.gsub(trimmed, env.gikun_delimiter .. ".*$", "")
     end
@@ -190,7 +190,7 @@ function Top.henkan(input, seg, env)
     local katakana = env.engine.context:get_option("katakana")
     local hw_katakana = env.engine.context:get_option("hw_katakana")
     if katakana or hw_katakana then
-        Top.katakana(trimmed, seg, hw_katakana, env)
+        Top.katakana(input, trimmed, seg, hw_katakana, env)
     end
     -- 1) user custom phrase
     Top.custom_phrase(trimmed, seg, env)
@@ -239,15 +239,17 @@ function Top.gikun(input, seg, env)
     end
 end
 
-function Top.katakana(input, seg, is_half_width, env)
+function Top.katakana(input, trimmed, seg, is_half_width, env)
     if is_half_width then
+        local katakana_halfwidth_str_trimmed = env.hira2kata_halfwidth_opencc:convert(trimmed)
         local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
-        local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end, katakana_halfwidth_str, "")
+        local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end, katakana_halfwidth_str_trimmed, "")
         katakana_halfwidth_cand.preedit = katakana_halfwidth_str
         yield(katakana_halfwidth_cand)
     else
+        local katakana_str_trimmed = env.hira2kata_opencc:convert(trimmed)
         local katakana_str = env.hira2kata_opencc:convert(input)
-        local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str, "")
+        local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str_trimmed, "")
         katakana_cand.preedit = katakana_str
         yield(katakana_cand)
     end
