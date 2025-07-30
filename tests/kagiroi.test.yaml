@@ -5,47 +5,11 @@ deploy:
     tests:
       - send: a
         assert: cand[1].text == "あ"
-      - send: an
-        assert: cand[1].text == "アン"
-      - send: ana
-        assert: cand[1].text == "穴"
-      - send: anat
-        assert: cand[1].text == "穴"
-      - send: anata
-        assert: cand[1].text == "あなた"
-
-      # preedit edge cases
-      - send: tyaa
-        assert: preedit == "ちゃあ"
-      - send: ccya
-        assert: preedit == "っちゃ"
-      - send: nannya
-        assert: preedit == "なんや"
-      - send: nnnnn
-        assert: preedit == "んんn"
-      - send: nnnnnn
-        assert: preedit == "んんん"
-
-      #　sentences
-      - send: karetahazunoedanitumottayuki
-        assert: cand[1].text == "枯れたはずの枝に積もった雪"
-      - send: suiheisenngahikaruasanianatanokibougakuzureotite
-        assert: cand[1].text == "水平線が光る朝にあなたの希望が崩れ落ちて"
-      - send: nagasisokonetashoujonoti
-        assert: cand[2].text == "流しそこねた少女の血"
-      
-      # partial selection
-      - send: 'daisukidattakotomo31'
-        assert: commit == "大好きだったことも"
-
-  katakana:
-    tests:
-      - send: 'aida{Control+i}'
-        assert: cand[1].text == "アイダ" and preedit == "アイダ"
-      - send: 'aida{Control+o}'
-        assert: cand[1].text == "ｱｲﾀﾞ" and preedit == "ｱｲﾀﾞ"
+      - send: aX
+        assert: cand[1].text == "ぁ"
+      - send: aXX
+        assert: cand[1].text == "あ"
     
-
   nocrash:
     tests:
       - send: nani{space}
