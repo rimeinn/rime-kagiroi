@@ -1,0 +1,83 @@
+schema:
+  schema_id: kagiroi_flick
+  name: カギロイ~フリック
+  version: '20250801'
+  author:
+    - kuroame
+  description: |
+    スマートな日本語入力、フリック対応
+  dependencies:
+    - kagiroi_kanji
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ あ, 英字 ]
+  - options: [ hiragana, katakana, hw_katakana]
+    reset: 0
+    states: [ ひらがな, カタカナ, ｶﾀｶﾅ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  processors:
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - lua_processor@*kagiroi/kagiroi_flick_speller
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - lua_translator@*kagiroi/kagiroi_translator
+  filters:
+    - uniquifier
+
+speller:
+  alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-
+
+translator:
+  dictionary: kagiroi_flick
+  enable_completion: false
+  enable_user_dict: false
+  enable_sentence: true
+  tag: kagiroi
+
+punctuator:
+  __patch:
+    - kagiroi:/punct/3_dan
+
+recognizer:
+  import_preset: default
+
+abc_segmentor:
+  extra_tags:
+    - kagiroi
+
+editor:
+  bindings:
+    Return: commit_script_text
+
+key_binder:
+  import_preset: default
+  bindings:
+    __patch:
+      - kagiroi:/key_bindings/paging_with_minus_equal
+      - kagiroi:/key_bindings/kagiroi_switches
+
+kagiroi:
+  translator:
+    sentence: 
+      # number of sentence candidates
+      size: 1
