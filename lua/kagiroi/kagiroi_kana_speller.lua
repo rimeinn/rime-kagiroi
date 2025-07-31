@@ -62,6 +62,7 @@ function Top.init(env)
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     env.kana_speller_cache = {}
+    env.max_kana_length = env.engine.schema.config:get_int("kagiroi/speller/max_kana_length") or math.huge
 
     -- clean broken bytes & justify caret position
     local last_caret_pos = 0
@@ -87,6 +88,9 @@ function Top.init(env)
             end
         end
     end, 0)
+    env.select_notifier =  env.engine.context.select_notifier:connect(function(ctx)
+        Top.refresh("" ,env)
+    end)
     env.gikun_enable = env.engine.schema.config:get_bool("kagiroi/gikun/enable") or true
     env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/delimiter") or ";"
 end
@@ -94,6 +98,7 @@ end
 function Top.fini(env)
     env.roma2hira_xlator = nil
     env.update_notifier:disconnect()
+    env.select_notifier:disconnect()
     collectgarbage()
 end
 
@@ -109,6 +114,11 @@ function Top.func(key_event, env)
     if not env.alphabet:find(ch, 1, true) then
         return kNoop
     end
+    return Top.refresh(ch, env)
+end
+
+
+function Top.refresh(ch, env)
     local context = env.engine.context
     local last_seg = context.composition:back()
     local input = context.input
@@ -128,6 +138,7 @@ function Top.func(key_event, env)
         return kNoop
     end
     local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
+
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
     if cand then
         local new_text = cand.text .. alphabet_text:sub(cand._end + 1)
@@ -142,7 +153,11 @@ function Top.func(key_event, env)
                 context:pop_input(#last_utf8_char)
             end
         end
+        if utf8.len(context.input .. new_text) >= env.max_kana_length then
+            context:commit()
+        end
         context:push_input(new_text)
+        local cur_input = context.input
         return kAccepted
     end
     return kNoop
