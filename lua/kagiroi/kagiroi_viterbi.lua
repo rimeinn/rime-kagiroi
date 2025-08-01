@@ -9,7 +9,6 @@ local segmentor = require("kagiroi/segmenter")
 local PriorityQueue = require("kagiroi/priority_queue")
 local lru = require("kagiroi/lru")
 local Module = {
-    kagiroi_dict = require("kagiroi/kagiroi_dict"),
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
     lattice = {}, -- lattice for viterbi algorithm
     start_index_by_col = {},
@@ -23,6 +22,27 @@ local Module = {
     surface = "",
     surface_len = 0
 }
+
+local youon = {"ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ゃ", "ゅ", "ょ"}
+
+local function start_with_youon(str)
+    local initial = kagiroi.utf8_sub(str, 1, 1)
+    for _, char in ipairs(youon) do
+        if initial == char then
+            return true
+        end
+    end
+    return false
+end
+
+local function calculate_userdict_cost(surface, commit_count)
+    local base_cost = 5000
+    local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
+    local frequency_bonus = math.log(commit_count + 2) / math.log(2)
+
+    local cost = math.max(500, base_cost * length_penalty / frequency_bonus)
+    return math.floor(cost)
+end
 
 local Node = {}
 
@@ -75,7 +95,7 @@ function Module._lookup(surface)
             return cached_results[index]
         end
     end
-    local lex_iter = Module.kagiroi_dict.query_lex(surface, false)
+    local lex_iter = Module.query_dict(surface)
     local userdict_iter = Module.query_userdict(surface)
     local merged_iter = Module._merge_iter(lex_iter, userdict_iter)
 
@@ -106,7 +126,7 @@ function Module._get_matrix_cost(right_id, left_id)
     else
         cache_set = {}
     end
-    local cost = Module.kagiroi_dict.query_matrix(right_id, left_id)
+    local cost = Module.query_matrix(right_id, left_id)
     cache_set[left_id] = cost
     cache:set(right_id, cache_set)
     return cost
@@ -694,20 +714,105 @@ function Module.clear()
 end
 
 function Module.init(env)
-    Module.kagiroi_dict.load()
-    if env.allow_table_word_in_sentence then
-        Module.kagiroi_dict.allow_table_word()
+    Module.query_userdict = function(input)
+        if not input or input == "" or start_with_youon(input) then
+            return function()
+                return nil
+            end
+        end
+        env.mem:user_lookup(input .. " \t", true)
+        local next_func, self = env.mem:iter_user()
+        return function()
+            local entry = next_func(self)
+            if not entry then
+                return nil
+            end
+            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
+            local surface = kagiroi.trim_trailing_space(entry.custom_code)
+            if candidate and left_id and right_id then
+                return {
+                    surface = surface,
+                    left_id = tonumber(left_id),
+                    right_id = tonumber(right_id),
+                    candidate = candidate,
+                    cost = calculate_userdict_cost(surface, entry.commit_count)
+                }
+            else
+                return {
+                    surface = surface,
+                    left_id = -1,
+                    right_id = -1,
+                    candidate = entry.text,
+                    cost = 50 / (entry.commit_count + 1)
+                }
+            end
+        end
+    end
+    Module._restore_weight = function(a)
+        return a
+    end
+    Module.query_dict = function(input)
+        if not input or input == "" or start_with_youon(input) then
+            return function()
+                return nil
+            end
+        end
+        local pseudo_seg = Segment(0, #input)
+        pseudo_seg.tags = Set{"kagiroi"}
+        local xlation = env.table_xlator:query(input, pseudo_seg)
+        if not xlation then
+            return function()
+                return nil
+            end
+        end
+        local next_func, self = xlation:iter()
+        return function()
+            while true do
+                local cand = next_func(self)
+                if not cand then
+                    return nil
+                end
+                local candidate, left_id, right_id = string.match(cand.text, "(.+)|(-?%d+) (-?%d+)")
+                local entry = cand:to_phrase().entry
+                local surface = cand.preedit
+                local weight = Module._restore_weight(entry.weight)
+                if candidate and left_id and right_id then
+                    return {
+                        surface = surface,
+                        left_id = tonumber(left_id),
+                        right_id = tonumber(right_id),
+                        candidate = candidate,
+                        cost = weight
+                    }
+                end
+            end
+
+        end
     end
 
-    Module.query_userdict = function(surface)
-        return nil
+    local iter = Module.query_dict("かぎろいからのあいさつです")
+    for res in iter do
+        if res.left_id == 1920 and res.right_id == 1920 and res.candidate == "カギロイからのあいさつです" then
+            local calculated_weight = res.cost
+            Module._restore_weight = function(log)
+                return math.floor(9999999 * math.exp(log - calculated_weight) + 0.5)
+            end
+            break
+        end
+    end
+
+    Module.query_matrix = function(prev_id, next_id)
+        local res = env.matrix_lookup:lookup(prev_id.." "..next_id)
+        if not res or res == "" then
+            return math.huge
+        end
+        return tonumber(res)
     end
     Module.clear()
 end
 
 function Module.fini()
     Module.clear()
-    Module.kagiroi_dict.release()
 end
 
 return Module

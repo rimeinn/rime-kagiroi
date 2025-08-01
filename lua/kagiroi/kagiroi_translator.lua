@@ -7,17 +7,7 @@ local kagiroi = require("kagiroi/kagiroi")
 
 local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
-local youon = {"ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ゃ", "ゅ", "ょ"}
 
-local function start_with_youon(str)
-    local initial = kagiroi.utf8_sub(str, 1, 1)
-    for _, char in ipairs(youon) do
-        if initial == char then
-            return true
-        end
-    end
-    return false
-end
 -- build rime candidates
 local function lex2cand(seg, lex, env)
     local dest_hiragana_str = lex.surface
@@ -34,63 +24,16 @@ local function lex2cand(seg, lex, env)
     return ShadowCandidate(new_cand, "kagiroi", lex.candidate, "")
 end
 
-local function calculate_userdict_cost(surface, commit_count)
-    local base_cost = 5000
-    local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
-    local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-
-    local cost = math.max(500, base_cost * length_penalty / frequency_bonus)
-    return math.floor(cost)
-end
-
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
+    env.matrix_lookup = ReverseLookup("kagiroi_matrix")
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
-
-    env.query_userdict = function(input)
-        if not input or input == "" or start_with_youon(input) then
-            return function()
-                return nil
-            end
-        end
-        env.mem:user_lookup(input .. " \t", true)
-
-        local next_func, self = env.mem:iter_user()
-        return function()
-            local entry = next_func(self)
-            if not entry then
-                return nil
-            end
-            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
-            local surface = kagiroi.trim_trailing_space(entry.custom_code)
-            if candidate and left_id and right_id then
-                return {
-                    surface = surface,
-                    left_id = tonumber(left_id),
-                    right_id = tonumber(right_id),
-                    candidate = candidate,
-                    cost = calculate_userdict_cost(surface, entry.commit_count)
-                }
-            else
-                return {
-                    surface = surface,
-                    left_id = -1,
-                    right_id = -1,
-                    candidate = entry.text,
-                    cost = 50 / (entry.commit_count + 1)
-                }
-            end
-        end
-    end
-    env.allow_table_word_in_sentence = env.engine.schema.config:get_bool("kagiroi/translator/sentence/allow_table_word")
     viterbi.init(env)
-    viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
-
     -- Update the user dict when our candidate is committed.
     env.mem:memorize(function(commit)
         local function save_phrase(dictentry)
@@ -193,7 +136,7 @@ function Top.henkan(input, projected, seg, env)
         Top.katakana(input, trimmed, seg, hw_katakana, env)
     end
     -- 1) user custom phrase
-    Top.custom_phrase(trimmed, seg, env)
+    -- Top.custom_phrase(trimmed, seg, env)
     -- 2) find the best n sentences matching the complete input
 
     viterbi.analyze(trimmed)

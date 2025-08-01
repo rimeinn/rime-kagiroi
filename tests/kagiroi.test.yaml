@@ -37,7 +37,10 @@ deploy:
       # partial selection
       - send: 'daisukidattakotomo31'
         assert: commit == "大好きだったことも"
-
+      
+      # custom phrase
+      - send: 'chuushuuinn'
+        assert: cand[1].text == "中州韻"
   katakana:
     tests:
       - send: 'aida{Control+i}'
@@ -51,4 +54,6 @@ deploy:
       - send: nani{space}
         assert: true
       - send: nani{space}
+        assert: true
+      - send: kagiroin{Left}{BackSpace}
         assert: true

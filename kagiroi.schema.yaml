@@ -12,6 +12,7 @@ schema:
     - kagiroi_kanji
     - kagiroi_ansikana
     - kagiroi_szromaji
+    - kagiroi_matrix
 
 switches:
   - name: ascii_mode
@@ -44,6 +45,7 @@ engine:
     - fallback_segmentor
   translators:
     - punct_translator
+    - table_translator@custom_phrase
     - lua_translator@*kagiroi/kagiroi_translator
   filters:
     - uniquifier
@@ -56,7 +58,16 @@ speller:
 translator:
   dictionary: kagiroi
   enable_user_dict: true
+  enable_sentence: false
+  enable_completion: false
   tag: kagiroi
+
+custom_phrase:
+  dictionary: ""
+  user_dict: kagiroi_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
 
 punctuator:
   __patch:

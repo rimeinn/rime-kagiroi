@@ -5,11 +5,11 @@
 name: kagiroi
 version: 20241204
 sort: by_weight
+use_preset_vocabulary: false
+import_tables:
+  - kagiroi.mozc
+  - kagiroi.nico
 ...
 
-
-# Add your own words here, format:
-# Word{Tab}Pronounciation(in hiragana)
-中州韻	ちゅうしゅういん
-小狼毫	うぃーぜる
-鼠鬚管	すくわーる
+# do not delete this line
+カギロイからのあいさつです|1920 1920	かぎろいからのあいさつです	9999999

@@ -1,37 +1,124 @@
-.PHONY: update_mozc build install clean
+#
+# Dictionary Kagiroi Makefile
+#
 
-MATRIX_DEF = matrix.def
-LEX_CSV = lex.csv
+.PHONY: all build clean install update_mozc
+
+# ==============================================================================
+# Variables
+# ==============================================================================
+
+SHELL := /bin/bash
+RM := rm -f
+
+# Output Dictionaries
+MOZC_DICT := kagiroi.mozc.dict.yaml
+NICO_DICT := kagiroi.nico.dict.yaml
+MATRIX_DICT := kagiroi_matrix.dict.yaml
+
+# Versioning
+CURRENT_DATE := $(shell date +%Y%m%d)
+
+# ==============================================================================
+# Dictionary Headers
+# ==============================================================================
+
+# Generic header template for dictionaries
+define GENERIC_DICT_HEADER
+# Rime dictionary
+# encoding: utf-8
+# $(3)
+# $(1)
+---
+name: $(2)
+version: $(CURRENT_DATE)
+sort: by_weight
+use_preset_vocabulary: false
+...
+
+#nocomment
+endef
+
+# Specific headers for each dictionary
+MOZC_DICT_HEADER := $(call GENERIC_DICT_HEADER,Dictionary mozc,kagiroi.mozc,license: see LICENSE)
+NICO_DICT_HEADER := $(call GENERIC_DICT_HEADER,Dictionary ニコニコ大百科,kagiroi.nico,source: https://tkido.com/blog/1019.html)
+MATRIX_DICT_HEADER := $(call GENERIC_DICT_HEADER,Connection data from mozc,kagiroi_matrix,license: see LICENSE)
+
+# Export headers to be available in subshells
+export MOZC_DICT_HEADER NICO_DICT_HEADER MATRIX_DICT_HEADER
+
+# ==============================================================================
+# Main Targets
+# ==============================================================================
 
 all: install
 
-install: clean build
+install: build
+	@echo "Done."
 
-build: update_mozc nico $(MATRIX_DEF) $(LEX_CSV)
-
-update_mozc:
-	[ -d mozc ] && ( cd mozc ; git pull ) || git clone https://github.com/google/mozc/
+build: $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT)
+	@echo "All dictionaries have been built."
 
 clean:
-	$(RM) lua/kagiroi/dic.userdb/*
+	@echo "Cleaning up generated files..."
+	$(RM) -f $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT)
+	$(RM) -rf .temp
+	@if [ -d lua/kagiroi/dic.userdb ]; then $(RM) -r lua/kagiroi/dic.userdb; fi
 
-$(MATRIX_DEF):
-	poetry run ./tools/generate_matrix_def.py
-	poetry run ./tools/prefix_suffix_penalty.py >> lua/kagiroi/dic/matrix.def
-	cat lua/kagiroi/dic/matrix_custom.def >> lua/kagiroi/dic/matrix.def
+# ==============================================================================
+# File Generation Rules
+# ==============================================================================
 
-$(LEX_CSV):
-	cat mozc/src/data/dictionary_oss/dictionary*.txt | tr "\\t" "," | grep -v "^," > lua/kagiroi/dic/lex.csv
-	cat lua/kagiroi/dic/lex_manual.csv >> lua/kagiroi/dic/lex.csv
-	cat lua/kagiroi/dic/dictionary*.txt | poetry run tools/convert_jisho.py mozc/src/data/dictionary_oss/id.def 8000 | tr "\\t" "," | grep -v "^," >> lua/kagiroi/dic/lex.csv
-	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then grep -v -x -f lua/kagiroi/dic/lex_excluded.csv lua/kagiroi/dic/lex.csv > lua/kagiroi/dic/lex.csv.tmp && mv lua/kagiroi/dic/lex.csv.tmp lua/kagiroi/dic/lex.csv; fi
+# Clones or updates the mozc repository
+update_mozc:
+	@if [ -d mozc ]; then \
+		echo "Updating mozc repository..."; \
+		(cd mozc ; git pull --quiet); \
+	else \
+		echo "Cloning mozc repository..."; \
+		git clone --depth 1 --quiet https://github.com/google/mozc/; \
+	fi
 
-nico:
-	rm -rf .temp
-	mkdir -p .temp
-	curl -L -o .temp/nicoime.zip http://tkido.com/nicoime/nicoime.zip
-	cd .temp && unzip -o nicoime.zip
-	iconv -f UTF-16LE -t UTF-8 .temp/nicoime_msime.txt > lua/kagiroi/dic/dictionary_nico.txt
-	awk -F'\t' 'BEGIN{OFS="\t"} {gsub("ヴ", "ゔ", $$1); print}' lua/kagiroi/dic/dictionary_nico.txt > lua/kagiroi/dic/dictionary_nico.txt.tmp && mv lua/kagiroi/dic/dictionary_nico.txt.tmp lua/kagiroi/dic/dictionary_nico.txt
-	poetry run tools/filter_nico_dictionary.py
-	
+# Generates the main dictionary from mozc data
+$(MOZC_DICT): update_mozc
+	@printf '%s\n' "$$MOZC_DICT_HEADER" > $@
+	@( \
+		cat mozc/src/data/dictionary_oss/dictionary*.txt | tr '\t' ',' | grep -v '^,'; \
+		cat lua/kagiroi/dic/lex_manual.csv \
+	) | \
+	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then \
+		grep -v -x -f lua/kagiroi/dic/lex_excluded.csv; \
+	else \
+		cat; \
+	fi | \
+	awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
+
+# Generates the Nico Nico dictionary
+$(NICO_DICT): update_mozc
+	@printf '%s\n' "$$NICO_DICT_HEADER" > $@
+	@mkdir -p .temp
+	@echo "Downloading and processing ニコニコ大百科..."
+	@curl -L -s -o .temp/nicoime.zip http://tkido.com/nicoime/nicoime.zip
+	@( \
+		cd .temp && \
+		unzip -o -q nicoime.zip && \
+		iconv -f UTF-16LE -t UTF-8 nicoime_msime.txt \
+	) | \
+		awk -F'\t' 'BEGIN{OFS="\t"} {gsub("ヴ", "ゔ", $$1); print}' | \
+		poetry run tools/filter_nico_dictionary.py | \
+		poetry run tools/convert_jisho.py mozc/src/data/dictionary_oss/id.def 8000 | \
+		tr '\t' ',' | \
+		grep -v '^,' | \
+		awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
+	@$(RM) -r .temp
+
+# Generates the matrix dictionary
+$(MATRIX_DICT):
+	@printf '%s\n' "$$MATRIX_DICT_HEADER" > $@
+	@( \
+		poetry run ./tools/generate_matrix_def.py; \
+		poetry run ./tools/prefix_suffix_penalty.py; \
+		cat lua/kagiroi/dic/matrix_custom.def \
+	) | awk '{print $$1" "$$2"\t"$$3}' >> $@
+
+.DEFAULT_GOAL := all

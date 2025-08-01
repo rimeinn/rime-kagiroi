@@ -90,23 +90,27 @@ def join_files(id_file: str, boundary_file: str) -> None:
     id_dict = load_id_def(id_file)
     boundary_list = load_boundary_def(boundary_file)
     
-    matched_prefix_ids: Set[str] = set()
-    matched_suffix_ids: Set[str] = set()
+    prefix_costs: Dict[str, str] = {}
+    suffix_costs: Dict[str, str] = {}
     
     for boundary_type, boundary_pos, cost in boundary_list:
         for id_num, id_pos in id_dict.items():
             if match_pos_pattern(id_pos, boundary_pos):
                 if boundary_type == 'PREFIX':
-                    print(f"-10 {id_num} {cost}")
-                    matched_prefix_ids.add(id_num)
+                    prefix_costs[id_num] = cost
                 elif boundary_type == 'SUFFIX':
-                    print(f"{id_num} -20 {cost}")
-                    matched_suffix_ids.add(id_num)
+                    suffix_costs[id_num] = cost
     
     for id_num in id_dict.keys():
-        if id_num not in matched_prefix_ids:
+        if id_num in prefix_costs:
+            print(f"-10 {id_num} {prefix_costs[id_num]}")
+        else:
             print(f"-10 {id_num} 0")
-        if id_num not in matched_suffix_ids:
+    
+    for id_num in id_dict.keys():
+        if id_num in suffix_costs:
+            print(f"{id_num} -20 {suffix_costs[id_num]}")
+        else:
             print(f"{id_num} -20 0")
 
 

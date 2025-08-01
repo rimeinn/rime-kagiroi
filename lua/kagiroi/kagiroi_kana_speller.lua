@@ -55,12 +55,10 @@ end
 
 function Top.init(env)
     env.prefix = env.engine.schema.config:get_string("kagiroi/prefix") or ""
-    env.preedit_view = env.engine.schema.config:get_string("kagiroi/preedit_view") or "hiragana"
     env.layout = "kagiroi_" .. env.engine.schema.config:get_string("kagiroi/layout") or "romaji"
     env.alphabet = env.engine.schema.config:get_string("kagiroi/speller/alphabet") or "zyxwvutsrqponmlkjihgfedcba-;"
     env.gikun_delimiter = env.engine.schema.config:get_string("kagiroi/gikun/alphabet")
     env.roma2hira_xlator = Component.Translator(env.engine, Schema(env.layout), "translator", "script_translator")
-    env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     env.kana_speller_cache = {}
 
     -- clean broken bytes & justify caret position

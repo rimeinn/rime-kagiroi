@@ -13,12 +13,6 @@ key_bindings:
 
 preset_for_layout:
   engine:
-    processors:
-      - speller
-    segmentors:
-      - abc_segmentor
-    translators:
-      - script_translator
   translator:
     enable_completion: false
     enable_user_dict: false
