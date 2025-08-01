@@ -66,7 +66,11 @@ function Top.init(env)
         local len, error_pos = utf8.len(input)
         local caret_pos = ctx.caret_pos
         if not len then
-            ctx:pop_input(#input:sub(1, caret_pos) - error_pos + 1)
+            if caret_pos >= error_pos then
+                ctx:pop_input(1)
+            else
+                ctx:delete_input(1)
+            end
         else
             local left_input = input:sub(1, caret_pos)
             local _, error_pos = utf8.len(left_input)

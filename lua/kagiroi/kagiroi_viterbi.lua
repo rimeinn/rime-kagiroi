@@ -806,7 +806,8 @@ function Module.init(env)
         if not res or res == "" then
             return math.huge
         end
-        return tonumber(res)
+        local last_part = string.match(res, "%S+$")
+        return tonumber(last_part) or math.huge
     end
     Module.clear()
 end
