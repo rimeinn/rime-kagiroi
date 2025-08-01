@@ -239,7 +239,8 @@ function Module._build_reverse_detour()
             node.rcost = math.huge
             local second_best_cost = node.rcost
             for _, succ_node in ipairs(successors) do
-                local new_rcost = node.wcost + Module._get_matrix_cost(node.right_id, succ_node.left_id)  + succ_node.rcost
+                local new_rcost = node.wcost + Module._get_matrix_cost(node.right_id, succ_node.left_id) +
+                                      succ_node.rcost
                 if succ_node.type == "eos" then
                     new_rcost = new_rcost + Module._get_suffix_penalty(node.right_id)
                 end
@@ -359,7 +360,7 @@ function Module._materialize(deviation)
         end
         deviation._materialized = {
             lex_table = lex_table,
-            cost = eos_node.cost,
+            cost = eos_node.cost
         }
         return deviation._materialized
     end
@@ -384,7 +385,7 @@ function Module._materialize(deviation)
     end
     deviation._materialized = {
         lex_table = lex_table,
-        cost = parent_materialized.cost + deviation.delta,
+        cost = parent_materialized.cost + deviation.delta
     }
     return deviation._materialized
 end
@@ -398,13 +399,13 @@ function Module._assemble(materialized)
         candidate = node.candidate .. candidate
         surface = node.surface .. surface
     end
-    
+
     local assem = {
         surface = surface,
         candidate = candidate,
         cost = materialized.cost,
         left_id = lex_table[#lex_table].left_id,
-        right_id = lex_table[2].right_id,-- eos is at 1
+        right_id = lex_table[2].right_id -- eos is at 1
     }
     local debug_func = function()
         local path_str_parts = {}
@@ -555,17 +556,16 @@ function Module.best_n_prefix()
     -- find min rcost + pref + conn
     local min_cost = math.huge
     for _, sect_node in ipairs(sect_nodes) do
-        local new_cost = sect_node.rcost + 
-                        Module._get_prefix_penalty(sect_node.left_id) +
-                        Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id)
+        local new_cost = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
+                             Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id)
         if new_cost < min_cost then
             min_cost = new_cost
         end
     end
 
     for _, sect_node in ipairs(sect_nodes) do
-        local sect_delta = sect_node.rcost +Module._get_prefix_penalty(sect_node.left_id) +
-                            Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
+        local sect_delta = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
+                               Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
         local cur_node = sect_node
         local next_node = sect_node.rsucc
         while next_node do
@@ -613,7 +613,7 @@ function Module.best_n_prefix()
                 break
             end
         end
-        table.insert(lex_table,1, Module.eos)
+        table.insert(lex_table, 1, Module.eos)
         -- log.info("assem. prefix")
         return Module._assemble({
             lex_table = lex_table,
@@ -637,7 +637,7 @@ function Module.best_n()
         detour_node = {
             node = Module.eos
         },
-        delta = 0,
+        delta = 0
     }
     local seen_candidate = {}
     local children_deviate = function(parent)
@@ -748,61 +748,36 @@ function Module.init(env)
             end
         end
     end
-    Module._restore_weight = function(a)
-        return a
-    end
     Module.query_dict = function(input)
         if not input or input == "" or start_with_youon(input) then
             return function()
                 return nil
             end
         end
-        local pseudo_seg = Segment(0, #input)
-        pseudo_seg.tags = Set{"kagiroi"}
-        local xlation = env.table_xlator:query(input, pseudo_seg)
-        if not xlation then
-            return function()
-                return nil
-            end
-        end
-        local next_func, self = xlation:iter()
+        env.mem:dict_lookup(input, false, 999999)
+        local next_func, self = env.mem:iter_dict()
         return function()
             while true do
-                local cand = next_func(self)
-                if not cand then
+                local entry = next_func(self)
+                if not entry then
                     return nil
                 end
-                local candidate, left_id, right_id = string.match(cand.text, "(.+)|(-?%d+) (-?%d+)")
-                local entry = cand:to_phrase().entry
-                local surface = cand.preedit
-                local weight = Module._restore_weight(entry.weight)
+                local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
                 if candidate and left_id and right_id then
                     return {
-                        surface = surface,
+                        surface = input,
                         left_id = tonumber(left_id),
                         right_id = tonumber(right_id),
                         candidate = candidate,
-                        cost = weight
+                        cost = math.floor(100000000 * math.exp(entry.weight) + 0.5)
                     }
                 end
             end
 
         end
     end
-
-    local iter = Module.query_dict("かぎろいからのあいさつです")
-    for res in iter do
-        if res.left_id == 1920 and res.right_id == 1920 and res.candidate == "カギロイからのあいさつです" then
-            local calculated_weight = res.cost
-            Module._restore_weight = function(log)
-                return math.floor(9999999 * math.exp(log - calculated_weight) + 0.5)
-            end
-            break
-        end
-    end
-
     Module.query_matrix = function(prev_id, next_id)
-        local res = env.matrix_lookup:lookup(prev_id.." "..next_id)
+        local res = env.matrix_lookup:lookup(prev_id .. " " .. next_id)
         if not res or res == "" then
             return math.huge
         end

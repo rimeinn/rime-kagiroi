@@ -26,7 +26,6 @@ end
 
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
-    env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
     env.matrix_lookup = ReverseLookup("kagiroi_matrix")
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
@@ -104,7 +103,6 @@ function Top.fini(env)
     env.mem:disconnect()
     env.pseudo_xlator = nil
     env.kanji_xlator = nil
-    env.table_xlator = nil
     env.delete_notifier:disconnect()
     viterbi.fini()
     collectgarbage()
@@ -135,9 +133,7 @@ function Top.henkan(input, projected, seg, env)
     if katakana or hw_katakana then
         Top.katakana(input, trimmed, seg, hw_katakana, env)
     end
-    -- 1) user custom phrase
-    -- Top.custom_phrase(trimmed, seg, env)
-    -- 2) find the best n sentences matching the complete input
+    -- find the best n sentences matching the complete input
 
     viterbi.analyze(trimmed)
     local iter = viterbi.best_n()
@@ -149,7 +145,7 @@ function Top.henkan(input, projected, seg, env)
         sentence_size = sentence_size - 1
     end
 
-    -- 3) find the best n prefixes for partial selecting,
+    -- find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
     local best_n = viterbi.best_n_prefix()
     local kanji_emitted = false
@@ -210,25 +206,6 @@ function Top.kanji(input, seg, env)
                 candidate = cand.text,
                 left_id = 1920,
                 right_id = 1920,
-                surface = cand.preedit
-            }
-            yield(lex2cand(seg, lex, env))
-            ::continue::
-        end
-    end
-end
-
-function Top.custom_phrase(input, seg, env)
-    local xlation = env.table_xlator:query(input, seg)
-    if xlation then
-        for cand in xlation:iter() do
-            if cand.type ~= "table" then
-                goto continue
-            end
-            local lex = {
-                candidate = cand.text,
-                left_id = -2,
-                right_id = -2,
                 surface = cand.preedit
             }
             yield(lex2cand(seg, lex, env))
