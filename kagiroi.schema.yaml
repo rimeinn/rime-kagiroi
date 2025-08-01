@@ -112,6 +112,12 @@ kagiroi:
       # Explain trailing n as ん, this is useful when using romaji layout
       # since you can avoid typing n twice to get ん
       - xform/^(.*)n$/$1ん$/
+      # for szromaji users
+      # - xform/^(.*)a$/$1あ$/
+      # - xform/^(.*)i$/$1い$/
+      # - xform/^(.*)u$/$1う$/
+      # - xform/^(.*)e$/$1え$/
+      # - xform/^(.*)o$/$1お$/
 
   # Gikun (義訓) is a powerful feature for personalizing your dictionary.
   # It allows you to associate a non-standard reading (what you type) with a specific word or phrase (the result)
