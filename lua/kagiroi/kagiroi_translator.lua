@@ -46,7 +46,6 @@ end
 function Top.init(env)
     env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
     env.table_xlator = Component.Translator(env.engine, Schema('kagiroi'), "translator", "table_translator")
-    
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
 
@@ -86,12 +85,6 @@ function Top.init(env)
         end
     end
     env.allow_table_word_in_sentence = env.engine.schema.config:get_bool("kagiroi/translator/sentence/allow_table_word")
-    env.kana_first = env.engine.schema.config:get_bool("kagiroi/translator/kana_first")
-    if env.engine.schema.config:get_bool("kagiroi/translator/kanchoku/enable") then
-        env.kanchoku_xlator = Component.Translator(env.engine, Schema('kagiroi'), "kagiroi/translator/kanchoku", "script_translator")
-        env.kanji_reverse_lookup = ReverseLookup("kagiroi_kanji")
-    end
-    env.kanchoku_max_code_length = env.engine.schema.config:get_int("kagiroi/kanchoku/max_code_length") or 4
     viterbi.init(env)
     viterbi.query_userdict = env.query_userdict
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
@@ -182,7 +175,6 @@ function Top.func(input, seg, env)
     if env.gikun_enable then
         Top.gikun(input, seg, env)
     end
-    Top.kanchoku(input, seg, env)
     local projected = env.mapping_projection:apply(input, true)
     Top.henkan(input, projected, seg, env)
 end
@@ -199,11 +191,9 @@ function Top.henkan(input, projected, seg, env)
     local hw_katakana = env.engine.context:get_option("hw_katakana")
     if katakana or hw_katakana then
         Top.katakana(input, trimmed, seg, hw_katakana, env)
-    elseif env.kana_first then
-        Top.hiragana(input, trimmed, seg, env)
     end
     -- 1) user custom phrase
-    Top.custom_phrase(input, trimmed, seg, env)
+    Top.custom_phrase(trimmed, seg, env)
     -- 2) find the best n sentences matching the complete input
 
     viterbi.analyze(trimmed)
@@ -249,35 +239,6 @@ function Top.gikun(input, seg, env)
     end
 end
 
-function Top.kanchoku(input, seg, env)
-    if not env.kanchoku_xlator then
-        return
-    end
-    local len = math.min(env.kanchoku_max_code_length, seg._end - seg.start)
-    for i = len, 1, -1 do
-        local segm = Segment(seg.start, seg.start + i)
-        segm.tags = Set{"abc"}
-        local xlation = env.kanchoku_xlator:query(input, segm)
-        if xlation then
-            for cand in xlation:iter() do
-                
-                -- TODO avoid generating sentence candidates
-                if cand.type == "sentence" or  env.kanji_reverse_lookup:lookup(cand.text) == "" then
-                    goto continue
-                end
-                local lex = {
-                    candidate = cand.text,
-                    left_id = 1920,
-                    right_id = 1920,
-                    surface = cand.preedit
-                }
-                yield(lex2cand(seg, lex, env))
-                ::continue::
-            end
-        end
-    end
-end
-
 function Top.katakana(input, trimmed, seg, is_half_width, env)
     if is_half_width then
         local katakana_halfwidth_str_trimmed = env.hira2kata_halfwidth_opencc:convert(trimmed)
@@ -292,11 +253,6 @@ function Top.katakana(input, trimmed, seg, is_half_width, env)
         katakana_cand.preedit = katakana_str
         yield(katakana_cand)
     end
-end
-
-function Top.hiragana(input, trimmed, seg, env)
-    local hiragana_cand = Candidate("kagiroi", seg.start, seg.start + string.len(trimmed) , trimmed, "")
-    yield(hiragana_cand)
 end
 
 function Top.kanji(input, seg, env)
@@ -320,9 +276,6 @@ function Top.kanji(input, seg, env)
 end
 
 function Top.custom_phrase(input, seg, env)
-    if not env.table_xlator then
-        return
-    end
     local xlation = env.table_xlator:query(input, seg)
     if xlation then
         for cand in xlation:iter() do

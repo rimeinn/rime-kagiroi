@@ -112,17 +112,6 @@ kagiroi:
       # Explain trailing n as ん, this is useful when using romaji layout
       # since you can avoid typing n twice to get ん
       - xform/^(.*)n$/$1ん$/
-    
-    # Direct kanji input (Kanchoku, 漢字直接入力)
-    # Kanchoku allows you to type Kanji directly using a custom input code system.
-    kanchoku:
-      enable: false
-      enable_completion: false
-      enable_user_dict: false
-      enable_sentence: false
-      prism: moran_kanchoku # use your own
-      dictionary: moran.chars # use your own
-      max_code_length: 4
 
   # Gikun (義訓) is a powerful feature for personalizing your dictionary.
   # It allows you to associate a non-standard reading (what you type) with a specific word or phrase (the result)
@@ -134,4 +123,3 @@ kagiroi:
     # The delimiter to separate the reading and the text of the word
     # Note: This character must also be added to your `speller/alphabet` to be recognized by the speller
     delimiter: ";"
-

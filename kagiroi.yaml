@@ -28,13 +28,13 @@ preset_for_layout:
 
 alphabet:
   3_dan:
-    alphabet: -qwertyuiopasdfghjkl;zxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM
+    alphabet: -qwertyuiopasdfghjkl;zxcvbnm
   4_dan: 
-    alphabet: 123#4$5%6^7&8*9(0)-_=\qwertyuiop=[]asdfghjkl;'"zxcvbnm,.`QWERTYUIOPASDFGHJKLZXCVBNM
+    alphabet: 123#4$5%6^7&8*9(0)-_=\qweErtyuiop=[]asdfghjkl;'"zZxcvbnm,.`
   3_dan_hira:
-    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-;
+    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz-;
   4_dan_hira:
-    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ123#4$5%6^7&8*9(0)-_=\qwertyuiop=[]asdfghjkl;'"zxcvbnm,.`QWERTYUIOPASDFGHJKLZXCVBNM
+    alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ123#4$5%6^7&8*9(0)-_=\qweErtyuiop=[]asdfghjkl;'"zZxcvbnm,.`
   hira:
     alphabet: ょあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅ
 
