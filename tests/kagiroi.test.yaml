@@ -41,6 +41,13 @@ deploy:
       # custom phrase
       - send: 'chuushuuinn'
         assert: cand[1].text == "中州韻"
+
+      - send: 'kagiroin{Left}{BackSpace}'
+        assert: preedit == "かぎろn"
+      - send: 'kagiroin{BackSpace}'
+        assert: preedit == "かぎろい"
+      - send: 'kagiroi{Left}{Left}{Left}{BackSpace}'
+        assert: preedit == "ぎろい"
   katakana:
     tests:
       - send: 'aida{Control+i}'
@@ -54,6 +61,4 @@ deploy:
       - send: nani{space}
         assert: true
       - send: nani{space}
-        assert: true
-      - send: kagiroin{Left}{BackSpace}
         assert: true

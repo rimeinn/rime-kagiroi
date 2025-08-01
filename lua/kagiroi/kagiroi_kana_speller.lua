@@ -1,10 +1,8 @@
 -- kagiroi_kana_speller.lua
 -- convert input to hiragana
-
 -- license: GPLv3
 -- version: 0.1.0
 -- author: kuroame
-
 local kAccepted = 1
 local kNoop = 2
 local XK_BackSpace = 0xff08
@@ -37,7 +35,7 @@ local nfc_map = {
     ["ひ゜"] = "ぴ",
     ["ふ゜"] = "ぷ",
     ["へ゜"] = "ぺ",
-    ["ほ゜"] = "ぽ",
+    ["ほ゜"] = "ぽ"
 }
 
 local function get_alphabet_suffix(text, alphabet)
@@ -66,10 +64,10 @@ function Top.init(env)
     env.update_notifier = env.engine.context.update_notifier:connect(function(ctx)
         local input = ctx.input
         local len, error_pos = utf8.len(input)
+        local caret_pos = ctx.caret_pos
         if not len then
-            ctx:pop_input(#input - error_pos + 1)
-        else 
-            local caret_pos = ctx.caret_pos
+            ctx:pop_input(#input:sub(1, caret_pos) - error_pos + 1)
+        else
             local left_input = input:sub(1, caret_pos)
             local _, error_pos = utf8.len(left_input)
             if error_pos then
@@ -96,7 +94,7 @@ function Top.fini(env)
 end
 
 function Top.func(key_event, env)
-    if  key_event:release() or key_event:ctrl() or key_event:alt() or key_event:super() then
+    if key_event:release() or key_event:ctrl() or key_event:alt() or key_event:super() then
         return kNoop
     end
     local keycode = key_event.keycode
@@ -116,7 +114,7 @@ function Top.func(key_event, env)
         if last_seg:has_tag("kagiroi") then
             local seg_text = input:sub(seg_start + 1, last_seg._end)
             remaining_alphabet = get_alphabet_suffix(seg_text, env.alphabet)
-            if env.gikun_enable and remaining_alphabet:sub(1,1) == env.gikun_delimiter then
+            if env.gikun_enable and remaining_alphabet:sub(1, 1) == env.gikun_delimiter then
                 remaining_alphabet = remaining_alphabet:sub(2, -1)
             end
         elseif seg_start ~= 0 or input ~= env.prefix then
@@ -125,7 +123,7 @@ function Top.func(key_event, env)
     elseif env.prefix ~= "" then
         return kNoop
     end
-    local alphabet_text =  ch == " " and remaining_alphabet or remaining_alphabet .. ch
+    local alphabet_text = ch == " " and remaining_alphabet or remaining_alphabet .. ch
     local cand = Top.query_roma2hira_xlator(alphabet_text, env)
     if cand then
         local new_text = cand.text .. alphabet_text:sub(cand._end + 1)
@@ -135,7 +133,7 @@ function Top.func(key_event, env)
         if cand.text == "゛" or cand.text == "゜" then
             local last_utf8_char = kagiroi.utf8_sub(context.input, -1, -1)
             local nfc_string = nfc_map[last_utf8_char .. cand.text]
-            if nfc_string then 
+            if nfc_string then
                 new_text = nfc_string
                 context:pop_input(#last_utf8_char)
             end
@@ -151,7 +149,7 @@ function Top.query_roma2hira_xlator(input, env)
         return env.kana_speller_cache[input]
     end
     local pseudo_seg = Segment(0, #input)
-    pseudo_seg.tags = Set{"kagiroi"}
+    pseudo_seg.tags = Set {"kagiroi"}
     local xlation = env.roma2hira_xlator:query(input, pseudo_seg)
     if xlation then
         local nxt, thisobj = xlation:iter()
@@ -161,6 +159,5 @@ function Top.query_roma2hira_xlator(input, env)
     end
     return nil
 end
-
 
 return Top
