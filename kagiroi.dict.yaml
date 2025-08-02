@@ -9,7 +9,5 @@ use_preset_vocabulary: false
 import_tables:
   - kagiroi.mozc
   - kagiroi.nico
+  - kagiroi.manual
 ...
-
-# do not delete this line
-カギロイからのあいさつです|1920 1920	かぎろいからのあいさつです	9999999

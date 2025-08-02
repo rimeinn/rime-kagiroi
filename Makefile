@@ -84,7 +84,6 @@ $(MOZC_DICT): update_mozc
 	@printf '%s\n' "$$MOZC_DICT_HEADER" > $@
 	@( \
 		cat mozc/src/data/dictionary_oss/dictionary*.txt | tr '\t' ',' | grep -v '^,'; \
-		cat lua/kagiroi/dic/lex_manual.csv \
 	) | \
 	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then \
 		grep -v -x -f lua/kagiroi/dic/lex_excluded.csv; \
@@ -109,6 +108,11 @@ $(NICO_DICT): update_mozc
 		poetry run tools/convert_jisho.py mozc/src/data/dictionary_oss/id.def 8000 | \
 		tr '\t' ',' | \
 		grep -v '^,' | \
+	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then \
+		grep -v -x -f lua/kagiroi/dic/lex_excluded.csv; \
+	else \
+		cat; \
+	fi | \
 		awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
 	@$(RM) -r .temp
 
