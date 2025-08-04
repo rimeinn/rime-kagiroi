@@ -2,12 +2,12 @@
 # encoding: utf-8
 # license: MIT
 
-# Kagiroi SZ-Romaji Dictionary (draft v2.2)
+# Kagiroi SZ-Romaji Dictionary (draft v2.4)
 # An experimental extended romaji layout
 
 ---
 name: kagiroi_szromaji
-version: 20250717
+version: 20250804
 sort: by_weight
 columns:
   - text
@@ -29,6 +29,7 @@ columns:
 あの	an
 あなた	am
 ある	ar
+あわ	aw
 ぁ	ay
 あた	aq
 あし	ax
@@ -47,9 +48,12 @@ columns:
 いす	is
 いぇい	iz
 いつ	it
+いで	id
 いい	ih
+いの	in
 いま	im
 いる	ir
+いわ	iw
 ぃ	iy
 いち	iq
 いし	ix
@@ -63,10 +67,15 @@ columns:
 う	uu
 うえ	ue
 うお	uo
-うけ	uk
+うか	uk
+うけ	ug
 うす	us
+うぇい	uz
 うく	ut
+うで	ud
 うう	uh
+うの	un
+うみ	um
 うつ	ur
 うわ	uw
 ぅ	uy
@@ -86,12 +95,16 @@ columns:
 えき	eg
 えす	es
 えて	et
+えで	ed
 ええ	eh
+えの	en
 えつ	em
 える	er
+えわ	ew
 ぇ	ey
 えた	eq
 えし	ex
+えき	ec
 えっ	ev
 えん	ef
 え	ej
@@ -102,11 +115,15 @@ columns:
 おえ	oe
 お	oo
 おき	ok
+おけ	og
 おつ	os
 おち	ot
+おで	od
 おお	oh
-おねがいします	om
+おの	on
+おも	om
 おる	or
+おわ	ow
 ぉ	oy
 おた	oq
 おく	ox
@@ -437,6 +454,7 @@ columns:
 いぇ	ye
 よ	yo
 やく	yk
+やが	yg
 やす	ys
 いぇい	yz
 いて	yt
@@ -452,6 +470,8 @@ columns:
 いた	yq
 よく	yx
 いく	yc
+いいん	yv
+いぇん	yf
 やん	yj
 やい	yl
 ー	q
@@ -461,8 +481,10 @@ columns:
 しぇ	xe
 しょ	xo
 しゃく	xk
+しぇく	xg
 しぇい	xz
 しゅく	xt
+しゃつ	xd
 しゅう	xh
 しょう	xb
 しゅん	xp
@@ -475,6 +497,7 @@ columns:
 しょく	xx
 しく	xc
 しん	xv
+しぇん	xf
 しゃん	xj
 しゃい	xl
 ちゃ	ca
@@ -483,11 +506,14 @@ columns:
 ちぇ	ce
 ちょ	co
 ちゃく	ck
+ちぇく	cg
 ちぇい	cz
 ちゅく	ct
+ちゃつ	cd
 ちゅう	ch
 ちょう	cb
 ちゅん	cp
+つな	cn
 つま	cm
 ちゅつ	cr
 ちょん	cw
@@ -496,6 +522,7 @@ columns:
 ちょく	cx
 ちく	cc
 ちん	cv
+ちぇん	cf
 ちゃん	cj
 ちゃい	cl
 っ	v
@@ -506,11 +533,14 @@ columns:
 じぇ	je
 じょ	jo
 じゃく	jk
+じゃが	jg
 じぇい	jz
 じゅく	jt
 じゅう	jh
 じょう	jb
 じゅん	jp
+じゃない	jn
+じゃま	jm
 じゅつ	jr
 じょん	jw
 じい	jy
@@ -518,6 +548,7 @@ columns:
 じょく	jx
 じき	jc
 じん	jv
+じぇん	jf
 じゃん	jj
 じゃい	jl
 りゃ	la
@@ -538,6 +569,7 @@ columns:
 りょく	lx
 りき	lc
 りん	lv
+りぇん	lf
 りゃん	lj
 りゃい	ll
 きゃ	kya
@@ -551,6 +583,8 @@ columns:
 きゅん	kyp
 きょん	kyw
 きょく	kyx
+きぃん	kyv
+きぇん	kyf
 きゃん	kyj
 きゃい	kyl
 ぎゃ	gya
@@ -564,6 +598,8 @@ columns:
 ぎゅん	gyp
 ぎょん	gyw
 ぎょく	gyx
+ぎぃん	gyv
+ぎぇん	gyf
 ぎゃん	gyj
 ぎゃい	gyl
 ひゃ	hya
@@ -577,6 +613,8 @@ columns:
 ひゅん	hyp
 ひょん	hyw
 ひょく	hyx
+ひぃん	hyv
+ひぇん	hyf
 ひゃん	hyj
 ひゃい	hyl
 びゃ	bya
@@ -590,6 +628,8 @@ columns:
 びゅん	byp
 びょん	byw
 びょく	byx
+びぃん	byv
+びぇん	byf
 びゃん	byj
 びゃい	byl
 ぴゃ	pya
@@ -603,6 +643,8 @@ columns:
 ぴゅん	pyp
 ぴょん	pyw
 ぴょく	pyx
+ぴぃん	pyv
+ぴぇん	pyf
 ぴゃん	pyj
 ぴゃい	pyl
 にゃ	nya
@@ -616,6 +658,8 @@ columns:
 にゅん	nyp
 にょん	nyw
 にょく	nyx
+にぃん	nyv
+にぇん	nyf
 にゃん	nyj
 にゃい	nyl
 みゃ	mya
@@ -629,6 +673,8 @@ columns:
 みゅん	myp
 みょん	myw
 みょく	myx
+みぃん	myv
+みぇん	myf
 みゃん	myj
 みゃい	myl
 うぁ	wua
