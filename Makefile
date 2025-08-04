@@ -14,7 +14,7 @@ RM := rm -f
 # Output Dictionaries
 MOZC_DICT := kagiroi.mozc.dict.yaml
 NICO_DICT := kagiroi.nico.dict.yaml
-MATRIX_DICT := kagiroi_matrix.dict.yaml
+MATRIX_DICT := opencc/kagiroi_matrix.ocd2
 
 # Versioning
 CURRENT_DATE := $(shell date +%Y%m%d)
@@ -93,10 +93,12 @@ $(MOZC_DICT): update_mozc
 	awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
 
 # Generates the Nico Nico dictionary
-$(NICO_DICT): update_mozc
+$(NICO_DICT): $(MOZC_DICT)
 	@printf '%s\n' "$$NICO_DICT_HEADER" > $@
 	@mkdir -p .temp
 	@echo "Downloading and processing ニコニコ大百科..."
+	@# Extract keys from mozc dictionary for filtering
+	@awk -F'\t' '{print $$1"\t"$$2}' $(MOZC_DICT) > .temp/mozc_keys.txt
 	@curl -L -s -o .temp/nicoime.zip http://tkido.com/nicoime/nicoime.zip
 	@( \
 		cd .temp && \
@@ -113,16 +115,19 @@ $(NICO_DICT): update_mozc
 	else \
 		cat; \
 	fi | \
-		awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
+		awk -F, 'BEGIN{while((getline line < ".temp/mozc_keys.txt") > 0) mozc[line]=1} {key = $$5"|"$$2" "$$3"\t"$$1; if (!mozc[key]) print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
 	@$(RM) -r .temp
 
 # Generates the matrix dictionary
 $(MATRIX_DICT):
-	@printf '%s\n' "$$MATRIX_DICT_HEADER" > $@
+	@echo "Generating matrix dictionary..."
 	@( \
 		poetry run ./tools/generate_matrix_def.py; \
 		poetry run ./tools/prefix_suffix_penalty.py; \
 		cat lua/kagiroi/dic/matrix_custom.def \
-	) | awk '{print $$1" "$$2"\t"$$3}' >> $@
+	) | awk '{key=$$1" "$$2; dict[key]=$$3} END {for (k in dict) print k"\t"dict[k]}' > kagiroi_matrix.txt
+	@echo "Converting to ocd2 format..."
+	opencc_dict -i kagiroi_matrix.txt -f text -t ocd2 -o opencc/kagiroi_matrix.ocd2
+	$(RM) kagiroi_matrix.txt 
 
 .DEFAULT_GOAL := all

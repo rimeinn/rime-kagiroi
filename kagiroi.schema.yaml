@@ -12,7 +12,6 @@ schema:
     - kagiroi_kanji
     - kagiroi_ansikana
     - kagiroi_szromaji
-    - kagiroi_matrix
 
 switches:
   - name: ascii_mode

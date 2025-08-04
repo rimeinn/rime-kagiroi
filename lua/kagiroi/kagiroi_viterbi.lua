@@ -10,6 +10,7 @@ local PriorityQueue = require("kagiroi/priority_queue")
 local lru = require("kagiroi/lru")
 local Module = {
     hira2kata_opencc = Opencc("kagiroi_h2k.json"),
+    matrix_opencc = Opencc("kagiroi_matrix.json"),
     lattice = {}, -- lattice for viterbi algorithm
     start_index_by_col = {},
     search_beam_width = 50,
@@ -777,7 +778,7 @@ function Module.init(env)
         end
     end
     Module.query_matrix = function(prev_id, next_id)
-        local res = env.matrix_lookup:lookup(prev_id .. " " .. next_id)
+        local res = Module.matrix_opencc:convert(prev_id .. " " .. next_id)
         if not res or res == "" then
             return math.huge
         end
