@@ -462,7 +462,7 @@ function Module._weave_dummy_iter(smart_iter)
         if current_dummy_index > #surface then
             return nil
         end
-        local dummy_node = Node:new(0, 0, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2],
+        local dummy_node = Node:new(1920, 1920, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2],
             "dummy")
         current_dummy_index = current_dummy_index + 1
         return dummy_node
