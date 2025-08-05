@@ -6,6 +6,7 @@
 - 使用[Project Mozc](https://github.com/google/mozc)的词典及连接矩阵数据
 - 使用Viterbi算法对假名序列进行转换
 - 內置罗马字、假名布局，也可以自行依据这些配置轻松地加入其他布局
+- 支持实时或者在kagiroi.dict.yaml里添加自定义词汇
 
 # 安装
 ℞ `rimeinn/rime-kagiroi`
