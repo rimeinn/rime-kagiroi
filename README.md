@@ -21,6 +21,9 @@ Rimeについては
 # 使用例
 ![](misc/example.png)
 
+> 💡
+> 詳しい使い方は、本プロジェクトの[Wikiページ](https://github.com/rimeinn/rime-kagiroi/wiki)(中国語のみ)をご覧ください
+
 # 依存
 - librime >= 1.11.2
 - librime-lua plugin
