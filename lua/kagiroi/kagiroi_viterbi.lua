@@ -35,13 +35,12 @@ local function start_with_youon(str)
     return false
 end
 
-local function calculate_userdict_cost(surface, commit_count)
-    local base_cost = 5000
-    local length_penalty = math.max(1, 2.0 - utf8.len(surface) * 0.3)
-    local frequency_bonus = math.log(commit_count + 2) / math.log(2)
-
-    local cost = math.max(500, base_cost * length_penalty / frequency_bonus)
-    return math.floor(cost)
+local function calculate_userdict_cost(surface, weight)
+     local SCALE = 8000
+     local BASE = 200 + 300 * utf8.len(surface)
+     local cost = BASE - SCALE * math.exp(weight)
+     local res = math.max(1, math.floor(cost + 0.5)) 
+     return res
 end
 
 local Node = {}
@@ -75,7 +74,7 @@ end
 -- @param lex table
 -- @return Node
 function Node:new_from_lex(lex)
-    return Node:new(lex.left_id, lex.right_id, lex.cost, lex.surface, lex.candidate, "lex")
+    return Node:new(lex.left_id, lex.right_id, lex.cost, lex.surface, lex.candidate, lex.type)
 end
 
 -- ----------------------------
@@ -132,12 +131,22 @@ function Module._get_matrix_cost(right_id, left_id)
     return cost
 end
 
-function Module._get_prefix_penalty(next_id)
-    return Module._get_matrix_cost(-10, next_id)
+function Module._get_prefix_penalty(node)
+    local base = Module._get_matrix_cost(-10, node.left_id)
+    -- single user word boost
+    if utf8.len(node.surface) >= Module.surface_len and node.type == "user_pos" then
+        base = math.max(1, math.floor(base * (1 / (1 + math.exp(-0.05 * (node.wcost - 500.5)))) + 0.5))
+    end
+    return base
 end
 
-function Module._get_suffix_penalty(prev_id)
-    return Module._get_matrix_cost(prev_id, -20)
+function Module._get_suffix_penalty(node)
+    local base = Module._get_matrix_cost(-10, node.right_id)
+    -- single user word boost
+    if utf8.len(node.surface) >= Module.surface_len and node.type == "user_pos" then
+        base = math.max(1, math.floor(base * (1 / (1 + math.exp(-0.05 * (node.wcost - 500.5)))) + 0.5))
+    end
+    return base
 end
 
 -- get the previous node of the node
@@ -211,7 +220,7 @@ function Module._build_detour(node)
         local delta = pnode.cost + conn_cost -- current path cost
         - (node.cost - node.wcost) -- best path cost
         if node.type == "eos" then
-            delta = delta + Module._get_suffix_penalty(pnode.right_id)
+            delta = delta + Module._get_suffix_penalty(pnode)
         end
         -- log.info(" added detour for " .. node.type .." ("..node.candidate.."): ".. pnode.candidate)
         table.insert(node.detour, {
@@ -242,7 +251,7 @@ function Module._build_reverse_detour()
                 local new_rcost = node.wcost + Module._get_matrix_cost(node.right_id, succ_node.left_id) +
                                       succ_node.rcost
                 if succ_node.type == "eos" then
-                    new_rcost = new_rcost + Module._get_suffix_penalty(node.right_id)
+                    new_rcost = new_rcost + Module._get_suffix_penalty(node)
                 end
                 if new_rcost < node.rcost then
                     second_best_cost = node.rcost
@@ -266,7 +275,7 @@ function Module._conn_eos()
     local min_index_row = 1
     for i, node_a in ipairs(Module.lattice[Module.surface_len]) do
         local current_cost_a = node_a.cost + Module._get_matrix_cost(node_a.right_id, eos.left_id) +
-                                   Module._get_suffix_penalty(node_a.right_id)
+                                   Module._get_suffix_penalty(node_a)
         if current_cost_a < min_calculated_cost then
             min_calculated_cost = current_cost_a
             min_index_row = i
@@ -303,11 +312,14 @@ function Module._extend_to(j)
                     if cost_without_matrix > node.cost then
                         break
                     end
-                    local cost_with_matrix = cost_without_matrix +
-                                                 Module._get_matrix_cost(open_node.right_id, node.left_id)
+                    local matrix_cost = Module._get_matrix_cost(open_node.right_id, node.left_id)
                     if open_node.type == "bos" then
-                        cost_with_matrix = cost_with_matrix + Module._get_prefix_penalty(node.left_id)
+                        if utf8.len(node.surface) >= Module.surface_len and node.type == "user_pos" then
+                            matrix_cost =math.max(1, math.floor(matrix_cost * (1 / (1 + math.exp(-0.05 * (node.wcost - 500.5)))) + 0.5))
+                        end
+                        matrix_cost = matrix_cost + Module._get_prefix_penalty(node)
                     end
+                    local cost_with_matrix = cost_without_matrix + matrix_cost
                     if cost_with_matrix < node.cost then
                         node.cost = cost_with_matrix
                         node.pre_index_row = k
@@ -420,8 +432,8 @@ function Module._assemble(materialized)
 
             local eos_conn_cost = Module._get_matrix_cost(last_node.right_id, eos_node.left_id)
             local bos_conn_cost = Module._get_matrix_cost(bos_node.right_id, first_node.left_id)
-            local suffix_penalty = Module._get_suffix_penalty(last_node.right_id)
-            local prefix_penalty = Module._get_prefix_penalty(first_node.left_id)
+            local suffix_penalty = Module._get_suffix_penalty(last_node)
+            local prefix_penalty = Module._get_prefix_penalty(first_node)
 
             table.insert(path_str_parts, "BOS")
             table.insert(path_str_parts, string.format("conn(%.0f)+pre(%.0f)", bos_conn_cost, prefix_penalty))
@@ -462,7 +474,7 @@ function Module._weave_dummy_iter(smart_iter)
         if current_dummy_index > #surface then
             return nil
         end
-        local dummy_node = Node:new(0, 0, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2],
+        local dummy_node = Node:new(1920, 1920, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2],
             "dummy")
         current_dummy_index = current_dummy_index + 1
         return dummy_node
@@ -556,7 +568,7 @@ function Module.best_n_prefix()
     -- find min rcost + pref + conn
     local min_cost = math.huge
     for _, sect_node in ipairs(sect_nodes) do
-        local new_cost = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
+        local new_cost = sect_node.rcost + Module._get_prefix_penalty(sect_node) +
                              Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id)
         if new_cost < min_cost then
             min_cost = new_cost
@@ -564,7 +576,7 @@ function Module.best_n_prefix()
     end
 
     for _, sect_node in ipairs(sect_nodes) do
-        local sect_delta = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
+        local sect_delta = sect_node.rcost + Module._get_prefix_penalty(sect_node) +
                                Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
         local cur_node = sect_node
         local next_node = sect_node.rsucc
@@ -596,7 +608,7 @@ function Module.best_n_prefix()
             return nil
         end
         local cur_node = deviation.sect_node
-        local cost = Module._get_matrix_cost(0, cur_node.left_id) + Module._get_prefix_penalty(cur_node.left_id)
+        local cost = Module._get_matrix_cost(0, cur_node.left_id) + Module._get_prefix_penalty(cur_node)
         local lex_table = {}
         while true do
             -- keep it reverse to compatible with _assemble
@@ -735,7 +747,8 @@ function Module.init(env)
                     left_id = tonumber(left_id),
                     right_id = tonumber(right_id),
                     candidate = candidate,
-                    cost = calculate_userdict_cost(surface, entry.commit_count)
+                    cost = calculate_userdict_cost(surface, entry.weight),
+                    type = "user_pos"
                 }
             else
                 return {
@@ -743,7 +756,8 @@ function Module.init(env)
                     left_id = -1,
                     right_id = -1,
                     candidate = entry.text,
-                    cost = 50 / (entry.commit_count + 1)
+                    cost = 50 / (entry.commit_count + 1),
+                    type = "user_pos"
                 }
             end
         end
@@ -769,7 +783,8 @@ function Module.init(env)
                         left_id = tonumber(left_id),
                         right_id = tonumber(right_id),
                         candidate = candidate,
-                        cost = math.floor(100000000 * math.exp(entry.weight) + 0.5)
+                        cost = math.floor(100000000 * math.exp(entry.weight) + 0.5),
+                        type = "sys_pos"
                     }
                 end
             end
