@@ -15,6 +15,7 @@ RM := rm -f
 MOZC_DICT := kagiroi.mozc.dict.yaml
 NICO_DICT := kagiroi.nico.dict.yaml
 MATRIX_DICT := kagiroi_matrix.dict.yaml
+EMOJI_DICT := opencc/kagiroi_emoji.txt
 
 # Versioning
 CURRENT_DATE := $(shell date +%Y%m%d)
@@ -56,12 +57,12 @@ all: install
 install: build
 	@echo "Done."
 
-build: $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT)
+build: $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT) $(EMOJI_DICT)
 	@echo "All dictionaries have been built."
 
 clean:
 	@echo "Cleaning up generated files..."
-	$(RM) -f $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT)
+	$(RM) -f $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT) $(EMOJI_DICT)
 	$(RM) -rf .temp
 	@if [ -d lua/kagiroi/dic.userdb ]; then $(RM) -r lua/kagiroi/dic.userdb; fi
 
@@ -125,4 +126,38 @@ $(MATRIX_DICT):
 		cat lua/kagiroi/dic/matrix_custom.def \
 	) | awk '{print $$1" "$$2"\t"$$3}' >> $@
 
+# Generates the emoji dictionary
+$(EMOJI_DICT): update_mozc
+	@echo "Generating emoji dictionary..."
+	@mkdir -p opencc
+	@awk -F'\t' 'BEGIN{OFS="\t"} NF>=3 && $$2!="" { \
+		if ($$3 != "") { \
+			split($$3, readings, " "); \
+			for (i in readings) { \
+				if (readings[i] != "") { \
+					if (dict[readings[i]]) { \
+						dict[readings[i]] = dict[readings[i]] " " $$2; \
+					} else { \
+						dict[readings[i]] = $$2; \
+					} \
+				} \
+			} \
+		} \
+		if (NF>=6 && $$6 != "") { \
+			split($$6, descriptions, " "); \
+			for (i in descriptions) { \
+				if (descriptions[i] != "") { \
+					if (dict[descriptions[i]]) { \
+						dict[descriptions[i]] = dict[descriptions[i]] " " $$2; \
+					} else { \
+						dict[descriptions[i]] = $$2; \
+					} \
+				} \
+			} \
+		} \
+	} END { \
+		for (name in dict) { \
+			print name "\t" name " " dict[name]; \
+		} \
+	}' mozc/src/data/emoji/emoji_data.tsv > $@
 .DEFAULT_GOAL := all

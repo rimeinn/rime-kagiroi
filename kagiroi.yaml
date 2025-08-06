@@ -9,6 +9,7 @@ key_bindings:
       - { when: composing, accept: "Control+u", set_option: hiragana}
       - { when: composing, accept: "Control+i", set_option: katakana}
       - { when: composing, accept: "Control+o", set_option: hw_katakana}
+      - { when: has_menu, accept: "Control+q", set_option: emoji}
 
 
 preset_for_layout:

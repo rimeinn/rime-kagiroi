@@ -25,9 +25,12 @@ switches:
     states: [ 半角, 全角 ]
   - name: ascii_punct
     states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
 
 engine:
   processors:
+    - key_logger
     - ascii_composer
     - recognizer
     - key_binder
@@ -48,6 +51,7 @@ engine:
     - table_translator@custom_phrase
     - lua_translator@*kagiroi/kagiroi_translator
   filters:
+    - simplifier@emoji
     - uniquifier
 
 speller:
@@ -92,6 +96,11 @@ key_binder:
     __patch:
       - kagiroi:/key_bindings/paging_with_minus_equal # comment this line out to free -= for use in 4-dan layouts
       - kagiroi:/key_bindings/kagiroi_switches
+
+emoji:
+  opencc_config: kagiroi_emoji.json
+  option_name: emoji
+  tips: none
 
 kagiroi:
   # Choose the input method layout. Whichever layout you select, 
