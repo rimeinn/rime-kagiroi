@@ -9,20 +9,7 @@ local segmentor = require("kagiroi/segmenter")
 local PriorityQueue = require("kagiroi/priority_queue")
 local lru = require("kagiroi/lru")
 local Module = {
-    hira2kata_opencc = Opencc("kagiroi_h2k.json"),
-    lattice = {}, -- lattice for viterbi algorithm
-    start_index_by_col = {},
-    search_beam_width = 50,
-    lookup_cache = nil,
-    lookup_cache_size = 50000,
-    bos = nil,
-    eos = nil,
-    matrix_cache = nil,
-    matrix_cache_size = 1000,
-    surface = "",
-    surface_len = 0
 }
-
 local youon = {"ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ゃ", "ゅ", "ょ"}
 
 local function start_with_youon(str)
@@ -85,8 +72,8 @@ end
 -- lookup the lexicon/user_dic entry for the surface
 -- @param surface string
 -- @return iterator of entries
-function Module._lookup(surface)
-    local cache = Module.lookup_cache
+function Module:_lookup(surface)
+    local cache = self.lookup_cache
     local cached_results = cache:get(surface)
     if cached_results then
         local index = 0
@@ -95,9 +82,9 @@ function Module._lookup(surface)
             return cached_results[index]
         end
     end
-    local lex_iter = Module.query_dict(surface)
-    local userdict_iter = Module.query_userdict(surface)
-    local merged_iter = Module._merge_iter(lex_iter, userdict_iter)
+    local lex_iter = self.query_dict(surface)
+    local userdict_iter = self.query_userdict(surface)
+    local merged_iter = self:_merge_iter(lex_iter, userdict_iter)
 
     local results = {}
     for entry in merged_iter do
@@ -115,8 +102,8 @@ end
 -- @param right_id int
 -- @param left_id int
 -- @return float
-function Module._get_matrix_cost(right_id, left_id)
-    local cache = Module.matrix_cache
+function Module:_get_matrix_cost(right_id, left_id)
+    local cache = self.matrix_cache
     local cache_set = cache:get(right_id)
     if cache_set then
         local cached_cost = cache_set[left_id]
@@ -126,34 +113,34 @@ function Module._get_matrix_cost(right_id, left_id)
     else
         cache_set = {}
     end
-    local cost = Module.query_matrix(right_id, left_id)
+    local cost = self.query_matrix(right_id, left_id)
     cache_set[left_id] = cost
     cache:set(right_id, cache_set)
     return cost
 end
 
-function Module._get_prefix_penalty(next_id)
-    return Module._get_matrix_cost(-10, next_id)
+function Module:_get_prefix_penalty(next_id)
+    return self:_get_matrix_cost(-10, next_id)
 end
 
-function Module._get_suffix_penalty(prev_id)
-    return Module._get_matrix_cost(prev_id, -20)
+function Module:_get_suffix_penalty(prev_id)
+    return self:_get_matrix_cost(prev_id, -20)
 end
 
 -- get the previous node of the node
 -- @param node Node
 -- @return Node
-function Module._pre_node(node)
-    return Module.lattice[node.pre_index_col][node.pre_index_row]
+function Module:_pre_node(node)
+    return self.lattice[node.pre_index_col][node.pre_index_row]
 end
 
-function Module._find_nodes_starting_at(i)
+function Module:_find_nodes_starting_at(i)
     local result = {}
-    for j = i, Module.surface_len do
-        if not Module.start_index_by_col[j] then
+    for j = i, self.surface_len do
+        if not self.start_index_by_col[j] then
             goto continue
         end
-        local nodes_at_ij = Module.start_index_by_col[j][i]
+        local nodes_at_ij = self.start_index_by_col[j][i]
         if not nodes_at_ij then
             goto continue
         end
@@ -169,7 +156,7 @@ end
 -- @param iter1 iterator
 -- @param iter2 iterator
 -- @return iterator
-function Module._merge_iter(iter1, iter2)
+function Module:_merge_iter(iter1, iter2)
     local current_iter = iter1
     return function()
         while current_iter do
@@ -187,31 +174,31 @@ function Module._merge_iter(iter1, iter2)
     end
 end
 
-function Module._init_lattice()
+function Module:_init_lattice()
     -- set the bos/eos node
     local eos = Node:new(0, 0, 0, "", "", "eos")
     local bos = Node:new(0, 0, 0, "", "", "bos")
     bos.start = 0
     bos._end = 0
-    eos.start = Module.surface_len + 1
-    eos._end = Module.surface_len + 1
-    Module.lattice[0] = {}
-    Module.lattice[eos._end] = {}
-    Module.lattice[0][1] = bos
-    Module.lattice[eos._end][1] = eos
-    Module.bos = bos
-    Module.eos = eos
+    eos.start = self.surface_len + 1
+    eos._end = self.surface_len + 1
+    self.lattice[0] = {}
+    self.lattice[eos._end] = {}
+    self.lattice[0][1] = bos
+    self.lattice[eos._end][1] = eos
+    self.bos = bos
+    self.eos = eos
 end
 
-function Module._build_detour(node)
+function Module:_build_detour(node)
     node.detour = {}
-    local pre_nodes = Module.lattice[node.start - 1]
+    local pre_nodes = self.lattice[node.start - 1]
     for row, pnode in ipairs(pre_nodes) do
-        local conn_cost = Module._get_matrix_cost(pnode.right_id, node.left_id)
+        local conn_cost = self:_get_matrix_cost(pnode.right_id, node.left_id)
         local delta = pnode.cost + conn_cost -- current path cost
         - (node.cost - node.wcost) -- best path cost
         if node.type == "eos" then
-            delta = delta + Module._get_suffix_penalty(pnode.right_id)
+            delta = delta + self:_get_suffix_penalty(pnode.right_id)
         end
         -- log.info(" added detour for " .. node.type .." ("..node.candidate.."): ".. pnode.candidate)
         table.insert(node.detour, {
@@ -224,25 +211,25 @@ function Module._build_detour(node)
     end)
 end
 
-function Module._build_reverse_detour()
-    Module.eos.rcost = 0
-    local max_width = math.min(20, Module.surface_len)
+function Module:_build_reverse_detour()
+    self.eos.rcost = 0
+    local max_width = math.min(20, self.surface_len)
     for j = max_width, 0, -1 do
-        for _, node in ipairs(Module.lattice[j] or {}) do
+        for _, node in ipairs(self.lattice[j] or {}) do
             local successors = {}
             if j == max_width then
-                table.insert(successors, Module.eos)
+                table.insert(successors, self.eos)
             else
-                successors = Module._find_nodes_starting_at(node._end + 1)
+                successors = self:_find_nodes_starting_at(node._end + 1)
             end
             local best_successor = nil
             node.rcost = math.huge
             local second_best_cost = node.rcost
             for _, succ_node in ipairs(successors) do
-                local new_rcost = node.wcost + Module._get_matrix_cost(node.right_id, succ_node.left_id) +
+                local new_rcost = node.wcost + self:_get_matrix_cost(node.right_id, succ_node.left_id) +
                                       succ_node.rcost
                 if succ_node.type == "eos" then
-                    new_rcost = new_rcost + Module._get_suffix_penalty(node.right_id)
+                    new_rcost = new_rcost + self:_get_suffix_penalty(node.right_id)
                 end
                 if new_rcost < node.rcost then
                     second_best_cost = node.rcost
@@ -258,15 +245,15 @@ function Module._build_reverse_detour()
     end
 end
 
-function Module._conn_eos()
-    local eos = Module.eos
-    eos.start = Module.surface_len + 1
-    eos._end = Module.surface_len + 1
+function Module:_conn_eos()
+    local eos = self.eos
+    eos.start = self.surface_len + 1
+    eos._end = self.surface_len + 1
     local min_calculated_cost = math.huge
     local min_index_row = 1
-    for i, node_a in ipairs(Module.lattice[Module.surface_len]) do
-        local current_cost_a = node_a.cost + Module._get_matrix_cost(node_a.right_id, eos.left_id) +
-                                   Module._get_suffix_penalty(node_a.right_id)
+    for i, node_a in ipairs(self.lattice[self.surface_len]) do
+        local current_cost_a = node_a.cost + self:_get_matrix_cost(node_a.right_id, eos.left_id) +
+                                   self:_get_suffix_penalty(node_a.right_id)
         if current_cost_a < min_calculated_cost then
             min_calculated_cost = current_cost_a
             min_index_row = i
@@ -274,22 +261,22 @@ function Module._conn_eos()
     end
     eos.cost = min_calculated_cost
     eos.pre_index_row = min_index_row
-    eos.pre_index_col = Module.surface_len
-    Module._build_detour(eos)
+    eos.pre_index_col = self.surface_len
+    self:_build_detour(eos)
 end
 
-function Module._extend_to(j)
-    Module.lattice[j] = {}
-    Module.start_index_by_col[j] = {}
-    local input = Module.surface
+function Module:_extend_to(j)
+    self.lattice[j] = {}
+    self.start_index_by_col[j] = {}
+    local input = self.surface
     for i = 1, j do
         local pre_index_col = i - 1
-        local open_nodes = Module.lattice[pre_index_col]
+        local open_nodes = self.lattice[pre_index_col]
         if #open_nodes == 0 then
             goto continue
         end
         local surface = kagiroi.utf8_sub(input, i, j)
-        local iter = Module._lookup(surface)
+        local iter = self:_lookup(surface)
         if iter then
             for lex in iter do
                 local node = Node:new_from_lex(lex)
@@ -304,9 +291,9 @@ function Module._extend_to(j)
                         break
                     end
                     local cost_with_matrix = cost_without_matrix +
-                                                 Module._get_matrix_cost(open_node.right_id, node.left_id)
+                                                 self:_get_matrix_cost(open_node.right_id, node.left_id)
                     if open_node.type == "bos" then
-                        cost_with_matrix = cost_with_matrix + Module._get_prefix_penalty(node.left_id)
+                        cost_with_matrix = cost_with_matrix + self:_get_prefix_penalty(node.left_id)
                     end
                     if cost_with_matrix < node.cost then
                         node.cost = cost_with_matrix
@@ -315,48 +302,48 @@ function Module._extend_to(j)
                 end
                 node.start = i
                 node._end = j
-                kagiroi.insert_sorted(Module.lattice[j], node, function(a, b)
+                kagiroi.insert_sorted(self.lattice[j], node, function(a, b)
                     return a.cost < b.cost
                 end)
-                if #Module.lattice[j] > Module.search_beam_width then
-                    table.remove(Module.lattice[j])
+                if #self.lattice[j] > self.search_beam_width then
+                    table.remove(self.lattice[j])
                 end
             end
         end
         ::continue::
     end
-    for _, node in ipairs(Module.lattice[j]) do
+    for _, node in ipairs(self.lattice[j]) do
         local i = node.start
-        if not Module.start_index_by_col[j] then
-            Module.start_index_by_col[j] = {}
+        if not self.start_index_by_col[j] then
+            self.start_index_by_col[j] = {}
         end
-        if not Module.start_index_by_col[j][i] then
-            Module.start_index_by_col[j][i] = {}
+        if not self.start_index_by_col[j][i] then
+            self.start_index_by_col[j][i] = {}
         end
-        table.insert(Module.start_index_by_col[j][i], node)
-        Module._build_detour(node)
+        table.insert(self.start_index_by_col[j][i], node)
+        self:_build_detour(node)
     end
 end
 
-function Module._build_lattice()
-    Module._init_lattice()
-    for j = 1, Module.surface_len do
-        Module._extend_to(j)
+function Module:_build_lattice()
+    self:_init_lattice()
+    for j = 1, self.surface_len do
+        self:_extend_to(j)
     end
 end
 
 -- materialize the deviation as table of lex and cost
-function Module._materialize(deviation)
+function Module:_materialize(deviation)
     if deviation._materialized then
         return deviation._materialized
     end
-    local eos_node = Module.eos
+    local eos_node = self.eos
     if deviation.is_root then
         local lex_table = {}
         local cur_node = eos_node
         while cur_node.type ~= "bos" do
             table.insert(lex_table, cur_node)
-            cur_node = Module._pre_node(cur_node)
+            cur_node = self:_pre_node(cur_node)
         end
         deviation._materialized = {
             lex_table = lex_table,
@@ -364,7 +351,7 @@ function Module._materialize(deviation)
         }
         return deviation._materialized
     end
-    local parent_materialized = Module._materialize(deviation.parent)
+    local parent_materialized = self:_materialize(deviation.parent)
     local parent_lex_table = parent_materialized.lex_table
     local lex_table = {}
     local found_detour_point = false
@@ -381,7 +368,7 @@ function Module._materialize(deviation)
     -- log.info("to " .. cur_node.candidate)
     while cur_node and cur_node.type ~= "bos" do
         table.insert(lex_table, cur_node)
-        cur_node = Module._pre_node(cur_node)
+        cur_node = self:_pre_node(cur_node)
     end
     deviation._materialized = {
         lex_table = lex_table,
@@ -391,7 +378,7 @@ function Module._materialize(deviation)
 end
 
 -- assemble the lex and cost
-function Module._assemble(materialized)
+function Module:_assemble(materialized)
     local lex_table = materialized.lex_table
     local candidate = ""
     local surface = ""
@@ -413,15 +400,15 @@ function Module._assemble(materialized)
         local total_cost = assem.cost
 
         if #lex_table > 1 then
-            local eos_node = Module.eos
-            local bos_node = Module.bos
+            local eos_node = self.eos
+            local bos_node = self.bos
             local first_node = lex_table[#lex_table]
             local last_node = lex_table[2]
 
-            local eos_conn_cost = Module._get_matrix_cost(last_node.right_id, eos_node.left_id)
-            local bos_conn_cost = Module._get_matrix_cost(bos_node.right_id, first_node.left_id)
-            local suffix_penalty = Module._get_suffix_penalty(last_node.right_id)
-            local prefix_penalty = Module._get_prefix_penalty(first_node.left_id)
+            local eos_conn_cost = self:_get_matrix_cost(last_node.right_id, eos_node.left_id)
+            local bos_conn_cost = self:_get_matrix_cost(bos_node.right_id, first_node.left_id)
+            local suffix_penalty = self:_get_suffix_penalty(last_node.right_id)
+            local prefix_penalty = self:_get_prefix_penalty(first_node.left_id)
 
             table.insert(path_str_parts, "BOS")
             table.insert(path_str_parts, string.format("conn(%.0f)+pre(%.0f)", bos_conn_cost, prefix_penalty))
@@ -434,7 +421,7 @@ function Module._assemble(materialized)
             for i = #lex_table - 1, 2, -1 do
                 local current_node = lex_table[i]
                 local prev_node = lex_table[i + 1]
-                local connection_cost = Module._get_matrix_cost(prev_node.right_id, current_node.left_id)
+                local connection_cost = self:_get_matrix_cost(prev_node.right_id, current_node.left_id)
                 total_cost_check = total_cost_check + connection_cost + current_node.wcost
                 table.insert(path_str_parts, string.format("conn(%.0f)", connection_cost))
                 table.insert(path_str_parts,
@@ -451,7 +438,7 @@ function Module._assemble(materialized)
     return assem
 end
 
-function Module._weave_dummy_iter(smart_iter)
+function Module:_weave_dummy_iter(smart_iter)
     local current_dummy_index = 1
     local high_quality_count = 7
     local high_quality_cost = 46040
@@ -468,9 +455,9 @@ function Module._weave_dummy_iter(smart_iter)
         return dummy_node
     end
 
-    if #Module.lattice[1] == 0 then
-        table.insert(surface, {Module.surface, Module.surface})
-        table.insert(surface, {Module.surface, Module.hira2kata_opencc:convert(Module.surface)})
+    if #self.lattice[1] == 0 then
+        table.insert(surface, {self.surface, self.surface})
+        table.insert(surface, {self.surface, self.hira2kata_opencc:convert(self.surface)})
         return dummy_node_iter
     end
 
@@ -493,7 +480,7 @@ function Module._weave_dummy_iter(smart_iter)
                 if (utf8.len(cur_smart_node.surface) < max_dummy_surface_len) then
                     table.insert(surface, {cur_smart_node.surface, cur_smart_node.surface})
                     table.insert(surface,
-                        {cur_smart_node.surface, Module.hira2kata_opencc:convert(cur_smart_node.surface)})
+                        {cur_smart_node.surface, self.hira2kata_opencc:convert(cur_smart_node.surface)})
                 end
                 return cur_smart_node
             end
@@ -515,57 +502,57 @@ end
 -- build the lattice for the input
 -- column of lattice: start position of the surface
 -- @param input string
-function Module.analyze(input)
-    if input == Module.surface then
-        Module.need_update = false
+function Module:analyze(input)
+    if input == self.surface then
+        self.need_update = false
         return
     end
-    Module.need_update = true
+    self.need_update = true
     -- log.info("anl. " .. input)
-    local prefix = kagiroi.utf8_common_prefix(input, Module.surface)
+    local prefix = kagiroi.utf8_common_prefix(input, self.surface)
     -- log.info("pref." .. prefix)
     local prefix_len = utf8.len(prefix)
-    local old_len = Module.surface_len
-    Module.surface = input
-    Module.surface_len = utf8.len(input)
+    local old_len = self.surface_len
+    self.surface = input
+    self.surface_len = utf8.len(input)
 
     if prefix_len == 0 then
-        Module._build_lattice()
+        self:_build_lattice()
     else
         -- truncate
         if prefix_len < old_len then
             for j = prefix_len + 1, old_len do
-                Module.lattice[j] = nil
-                Module.start_index_by_col[j] = nil
+                self.lattice[j] = nil
+                self.start_index_by_col[j] = nil
             end
         end
         -- extend
-        for j = prefix_len + 1, Module.surface_len do
-            Module._extend_to(j)
+        for j = prefix_len + 1, self.surface_len do
+            self:_extend_to(j)
         end
     end
-    Module._conn_eos()
+    self:_conn_eos()
 end
 
 -- generate the nbest list for the prefix
 -- @return iterator of nbest prefixes
-function Module.best_n_prefix()
-    Module._build_reverse_detour()
-    local sect_nodes = Module._find_nodes_starting_at(1)
+function Module:best_n_prefix()
+    self:_build_reverse_detour()
+    local sect_nodes = self:_find_nodes_starting_at(1)
     local collector = PriorityQueue()
     -- find min rcost + pref + conn
     local min_cost = math.huge
     for _, sect_node in ipairs(sect_nodes) do
-        local new_cost = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
-                             Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id)
+        local new_cost = sect_node.rcost + self:_get_prefix_penalty(sect_node.left_id) +
+                             self:_get_matrix_cost(self.bos.right_id, sect_node.left_id)
         if new_cost < min_cost then
             min_cost = new_cost
         end
     end
 
     for _, sect_node in ipairs(sect_nodes) do
-        local sect_delta = sect_node.rcost + Module._get_prefix_penalty(sect_node.left_id) +
-                               Module._get_matrix_cost(Module.bos.right_id, sect_node.left_id) - min_cost
+        local sect_delta = sect_node.rcost + self:_get_prefix_penalty(sect_node.left_id) +
+                               self:_get_matrix_cost(self.bos.right_id, sect_node.left_id) - min_cost
         local cur_node = sect_node
         local next_node = sect_node.rsucc
         while next_node do
@@ -590,13 +577,13 @@ function Module.best_n_prefix()
             next_node = cur_node.rsucc
         end
     end
-    return Module._weave_dummy_iter(function()
+    return self:_weave_dummy_iter(function()
         local deviation = collector:pop()
         if not deviation then
             return nil
         end
         local cur_node = deviation.sect_node
-        local cost = Module._get_matrix_cost(0, cur_node.left_id) + Module._get_prefix_penalty(cur_node.left_id)
+        local cost = self:_get_matrix_cost(0, cur_node.left_id) + self:_get_prefix_penalty(cur_node.left_id)
         local lex_table = {}
         while true do
             -- keep it reverse to compatible with _assemble
@@ -607,15 +594,15 @@ function Module.best_n_prefix()
             end
             local next_node = cur_node.rsucc
             if next_node then
-                cost = cost + Module._get_matrix_cost(cur_node.right_id, next_node.left_id)
+                cost = cost + self:_get_matrix_cost(cur_node.right_id, next_node.left_id)
                 cur_node = next_node
             else
                 break
             end
         end
-        table.insert(lex_table, 1, Module.eos)
+        table.insert(lex_table, 1, self.eos)
         -- log.info("assem. prefix")
-        return Module._assemble({
+        return self:_assemble({
             lex_table = lex_table,
             cost = cost
         })
@@ -624,8 +611,8 @@ end
 
 -- generate nbest candidate for the input
 -- @return iterator of nbest sentences
-function Module.best_n()
-    if not Module._pre_node(Module.eos) then
+function Module:best_n()
+    if not self:_pre_node(self.eos) then
         return function()
             return nil
         end
@@ -633,9 +620,9 @@ function Module.best_n()
     local deviations_tree = PriorityQueue()
     local root = {
         is_root = true,
-        eos = Module.eos,
+        eos = self.eos,
         detour_node = {
-            node = Module.eos
+            node = self.eos
         },
         delta = 0
     }
@@ -655,7 +642,7 @@ function Module.best_n()
                     delta = delta -- delta value of this detour
                 }, parent.delta + delta)
             end
-            cur_node = Module._pre_node(cur_node)
+            cur_node = self:_pre_node(cur_node)
         end
     end
     local sibling_deviate = function(brother)
@@ -685,7 +672,7 @@ function Module.best_n()
                 node_to_return = next_node
                 next_node = nil
             elseif node_to_return then
-                local assembled = Module._assemble(Module._materialize(node_to_return))
+                local assembled = self:_assemble(self:_materialize(node_to_return))
                 next_node = deviations_tree:pop()
                 if not next_node then
                     node_to_return = nil
@@ -701,94 +688,106 @@ function Module.best_n()
     end
 end
 
-function Module.clear()
-    Module.lattice = {}
-    Module.surface = ""
-    Module.bos = nil
-    if Module.lookup_cache_size > 0 then
-        Module.lookup_cache = lru.new(Module.lookup_cache_size)
+function Module:clear()
+    self.lattice = {}
+    self.surface = ""
+    self.bos = nil
+    if self.lookup_cache_size > 0 then
+        self.lookup_cache = lru.new(self.lookup_cache_size)
     end
-    if Module.matrix_cache_size > 0 then
-        Module.matrix_cache = lru.new(Module.matrix_cache_size)
+    if self.matrix_cache_size > 0 then
+        self.matrix_cache = lru.new(self.matrix_cache_size)
     end
 end
 
-function Module.init(env)
-    Module.query_userdict = function(input)
-        if not input or input == "" or start_with_youon(input) then
+function Module.new(env)
+    local o = {
+        hira2kata_opencc = Opencc("kagiroi_h2k.json"),
+        lattice = {}, -- lattice for viterbi algorithm
+        start_index_by_col = {},
+        search_beam_width = 50,
+        lookup_cache = nil,
+        lookup_cache_size = 50000,
+        bos = nil,
+        eos = nil,
+        matrix_cache = nil,
+        matrix_cache_size = 1000,
+        surface = "",
+        surface_len = 0,
+        query_userdict = function(input)
+            if not input or input == "" or start_with_youon(input) then
+                return function()
+                    return nil
+                end
+            end
+            env.mem:user_lookup(input .. " \t", true)
+            local next_func, self = env.mem:iter_user()
             return function()
-                return nil
-            end
-        end
-        env.mem:user_lookup(input .. " \t", true)
-        local next_func, self = env.mem:iter_user()
-        return function()
-            local entry = next_func(self)
-            if not entry then
-                return nil
-            end
-            local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
-            local surface = kagiroi.trim_trailing_space(entry.custom_code)
-            if candidate and left_id and right_id then
-                return {
-                    surface = surface,
-                    left_id = tonumber(left_id),
-                    right_id = tonumber(right_id),
-                    candidate = candidate,
-                    cost = calculate_userdict_cost(surface, entry.commit_count)
-                }
-            else
-                return {
-                    surface = surface,
-                    left_id = -1,
-                    right_id = -1,
-                    candidate = entry.text,
-                    cost = 50 / (entry.commit_count + 1)
-                }
-            end
-        end
-    end
-    Module.query_dict = function(input)
-        if not input or input == "" or start_with_youon(input) then
-            return function()
-                return nil
-            end
-        end
-        env.mem:dict_lookup(input, false, 999999)
-        local next_func, self = env.mem:iter_dict()
-        return function()
-            while true do
                 local entry = next_func(self)
                 if not entry then
                     return nil
                 end
                 local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
+                local surface = kagiroi.trim_trailing_space(entry.custom_code)
                 if candidate and left_id and right_id then
                     return {
-                        surface = input,
+                        surface = surface,
                         left_id = tonumber(left_id),
                         right_id = tonumber(right_id),
                         candidate = candidate,
-                        cost = math.floor(100000000 * math.exp(entry.weight) + 0.5)
+                        cost = calculate_userdict_cost(surface, entry.commit_count)
+                    }
+                else
+                    return {
+                        surface = surface,
+                        left_id = -1,
+                        right_id = -1,
+                        candidate = entry.text,
+                        cost = 50 / (entry.commit_count + 1)
                     }
                 end
             end
-
+        end,
+        query_dict = function(input)
+            if not input or input == "" or start_with_youon(input) then
+                return function()
+                    return nil
+                end
+            end
+            env.mem:dict_lookup(input, false, 999999)
+            local next_func, self = env.mem:iter_dict()
+            return function()
+                while true do
+                    local entry = next_func(self)
+                    if not entry then
+                        return nil
+                    end
+                    local candidate, left_id, right_id = string.match(entry.text, "(.+)|(-?%d+) (-?%d+)")
+                    if candidate and left_id and right_id then
+                        return {
+                            surface = input,
+                            left_id = tonumber(left_id),
+                            right_id = tonumber(right_id),
+                            candidate = candidate,
+                            cost = math.floor(100000000 * math.exp(entry.weight) + 0.5)
+                        }
+                    end
+                end
+    
+            end
+        end,
+        query_matrix = function(prev_id, next_id)
+            local res = env.matrix_lookup:lookup(prev_id .. " " .. next_id)
+            if not res or res == "" then
+                return math.huge
+            end
+            local last_part = string.match(res, "%S+$")
+            return tonumber(last_part) or math.huge
         end
-    end
-    Module.query_matrix = function(prev_id, next_id)
-        local res = env.matrix_lookup:lookup(prev_id .. " " .. next_id)
-        if not res or res == "" then
-            return math.huge
-        end
-        local last_part = string.match(res, "%S+$")
-        return tonumber(last_part) or math.huge
-    end
-    Module.clear()
-end
-
-function Module.fini()
-    Module.clear()
+    }
+    setmetatable(o, {__index = Module})
+    o:clear()
+    return o
 end
 
 return Module

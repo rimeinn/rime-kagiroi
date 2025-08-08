@@ -29,10 +29,10 @@ function Top.init(env)
     env.matrix_lookup = ReverseLookup("kagiroi_matrix")
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
-    viterbi.init(env)
     env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
     env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
     env.mem = Memory(env.engine, Schema('kagiroi'))
+    env.viterbi = viterbi.new(env)
     -- Update the user dict when our candidate is committed.
     env.mem:memorize(function(commit)
         local function save_phrase(dictentry)
@@ -84,10 +84,10 @@ function Top.init(env)
                 save_phrase(dictentry)
             end
         end
-        viterbi.clear()
+        env.viterbi:clear()
     end)
     env.delete_notifier = env.engine.context.delete_notifier:connect(function(ctx)
-        viterbi.clear()
+        env.viterbi:clear()
     end, 0)
 
     env.tag = env.engine.schema.config:get_string("kagiroi/tag") or ""
@@ -104,7 +104,7 @@ function Top.fini(env)
     env.pseudo_xlator = nil
     env.kanji_xlator = nil
     env.delete_notifier:disconnect()
-    viterbi.fini()
+    env.viterbi = nil
     collectgarbage()
 end
 
@@ -135,8 +135,8 @@ function Top.henkan(input, projected, seg, env)
     end
     -- find the best n sentences matching the complete input
 
-    viterbi.analyze(trimmed)
-    local iter = viterbi.best_n()
+    env.viterbi:analyze(trimmed)
+    local iter = env.viterbi:best_n()
     local sentence_size = env.sentence_size
     local sentence = iter()
     while sentence ~= nil and sentence_size > 0 do
@@ -147,7 +147,7 @@ function Top.henkan(input, projected, seg, env)
 
     -- find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
-    local best_n = viterbi.best_n_prefix()
+    local best_n = env.viterbi:best_n_prefix()
     local kanji_emitted = false
     local KANJI_CANDIDATE_COST_THRESHOLD = 368320
     for phrase in best_n do
