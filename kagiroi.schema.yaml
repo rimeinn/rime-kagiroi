@@ -30,7 +30,6 @@ switches:
 
 engine:
   processors:
-    - key_logger
     - ascii_composer
     - recognizer
     - key_binder
