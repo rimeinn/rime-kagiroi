@@ -16,7 +16,7 @@ jobs:
         run: |
             rime_deployer --build . /usr/share/rime-data ./build
       - name: Remove original dict files
-        run: rm -f kagiroi*.dict.yaml
+        run: rm -f kagiroi*.dict.yaml && rm .gitignore
       - name: Update recipe.yaml
         run: echo "  build/*" >> recipe.yaml
       - name: Deploy to branch
