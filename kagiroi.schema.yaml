@@ -13,6 +13,8 @@ schema:
     - kagiroi_ansikana
     - kagiroi_szromaji
     - kagiroi_matrix
+    # - moran
+    # - mungyeong
 
 switches:
   - name: ascii_mode
@@ -31,6 +33,7 @@ switches:
 engine:
   processors:
     - ascii_composer
+    # - lua_processor@*mungyeong/mungyeong_hangul_speller # for mungyeong revserse lookup
     - recognizer
     - key_binder
     - lua_processor@*kagiroi/kagiroi_kana_speller # convert raw input to hiragana
@@ -47,6 +50,8 @@ engine:
     - fallback_segmentor
   translators:
     - punct_translator
+    # - reverse_lookup_translator@mungyeong # for kagiroi # for mungyeong revserse lookup
+    # - reverse_lookup_translator@moran # for kagiroi # for moran revserse lookup
     - table_translator@custom_phrase
     - lua_translator@*kagiroi/kagiroi_translator
   filters:
@@ -80,6 +85,9 @@ punctuator:
 
 recognizer:
   import_preset: default
+  patterns:
+    moran: "^C[a-z]*$"
+    mungyeong: '^K(?:(?:(?:\xEA[\xB0-\xBF]|\xEB[\x80-\xBF]|\xEC[\x80-\xBF]|\xED[\x80-\x9D])[\x80-\xBF]|\xED\x9E[\x80-\xA3]|\xE3\x84[\xB1-\xBF]|\xE3\x85[\x80-\xA3])|[a-zA-Z])*$'
 
 abc_segmentor:
   extra_tags:
@@ -100,6 +108,29 @@ emoji:
   opencc_config: kagiroi_emoji.json
   option_name: emoji
   tips: none
+
+kagiroi_kanji:
+  dictionary: kagiroi_kanji
+
+mungyeong:
+  dictionary: mungyeong.extended
+  target: kagiroi_kanji
+  prefix: 'K'
+  tag: mungyeong
+  tips: "〔문경〕"
+  layout: dubeolsik
+  preedit_format:
+    - xform/^K//
+  auto_space: false
+
+moran:
+  dictionary: moran.chars
+  target: kagiroi_kanji
+  prefix: "C"
+  tips: "〔魔然〕"
+  tag: moran
+  preedit_format:
+    - xform/^C//
 
 kagiroi:
   # Choose the input method layout. Whichever layout you select, 
