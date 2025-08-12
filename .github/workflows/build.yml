@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - main
+      - workflow
+  pull_request:
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+            sudo apt-get install -y librime-bin
+      - name: Build kagiroi
+        run: |
+            rime_deployer --build
+      - name: Remove original dict files
+        run: rm -f kagiroi*.dict.yaml
+      - name: Update recipe.yaml
+        run: echo "  build/*" >> recipe.yaml
+      - name: Deploy to branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: pre_build 
+          publish_dir: .
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: "Deploy: pre build"
