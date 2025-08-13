@@ -2,7 +2,6 @@ on:
   push:
     branches:
       - main
-      - workflow
   pull_request:
 jobs:
   build-and-deploy:
@@ -16,15 +15,29 @@ jobs:
         run: |
             rime_deployer --build . /usr/share/rime-data ./build
       - name: Remove original dict files
-        run: rm -f kagiroi*.dict.yaml && rm .gitignore
+        run: rm -f kagiroi*.dict.yaml && rm -f .gitignore
       - name: Update recipe.yaml
         run: echo "  build/*" >> recipe.yaml
+      - name: Prepare files for deployment
+        run: |
+          mkdir release_dist
+          mkdir -p release_dist/lua/kagiroi
+          cp      lua/kagiroi/*.lua   release_dist/lua/kagiroi/
+          mkdir -p release_dist/opencc
+          cp -r   opencc/*            release_dist/opencc/
+          mkdir -p release_dist/build
+          cp      build/kagiroi*      release_dist/build/
+          cp      kagiroi*.yaml       release_dist/
+          cp      kagiroi.ico         release_dist/
+          cp      recipe.yaml         release_dist/
+          echo "--- Files to be deployed ---"
+          ls -R release_dist
       - name: Deploy to branch
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: pre_build 
-          publish_dir: .
+          publish_branch: build 
+          publish_dir: ./release_dist
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: "Deploy: pre build"
+          commit_message: "Deploy: build"
