@@ -1,0 +1,181 @@
+schema:
+  schema_id: kagiroi
+  name: カギロイ
+  icon: kagiroi.ico
+  version: '20250717'
+  author:
+    - kuroame
+  description: |
+    スマートな日本語入力。
+  dependencies:
+    - kagiroi_romaji
+    - kagiroi_kanji
+    - kagiroi_ansikana
+    - kagiroi_szromaji
+    - kagiroi_matrix
+    # - moran
+    # - mungyeong
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ あ, 英字 ]
+  - options: [ hiragana, katakana, hw_katakana]
+    reset: 0
+    states: [ ひらがな, カタカナ, ｶﾀｶﾅ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji
+    states: [ 🈚, 🈶 ]
+
+engine:
+  processors:
+    - ascii_composer
+    # - lua_processor@*mungyeong/mungyeong_hangul_speller # for mungyeong revserse lookup
+    - recognizer
+    - key_binder
+    - lua_processor@*kagiroi/kagiroi_kana_speller # convert raw input to hiragana
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    # - reverse_lookup_translator@mungyeong # for kagiroi # for mungyeong revserse lookup
+    # - reverse_lookup_translator@moran # for kagiroi # for moran revserse lookup
+    - table_translator@custom_phrase
+    - lua_translator@*kagiroi/kagiroi_translator
+  filters:
+    - simplifier@emoji
+    - uniquifier
+
+speller:
+  __include: kagiroi:/alphabet/3_dan_hira
+  # use 4_dan_hira if you want to use ansikana or other layout that requires 4 rows of keys
+  # __include: kagiroi:/alphabet/4_dan_hira
+
+translator:
+  dictionary: kagiroi
+  enable_user_dict: true
+  enable_sentence: false
+  enable_completion: false
+  tag: kagiroi
+
+custom_phrase:
+  dictionary: ""
+  user_dict: kagiroi_custom_phrases
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+
+punctuator:
+  __patch:
+    - kagiroi:/punct/3_dan
+    # use 4_dan if you want to use ansikana or other layout that requires 4 rows of keys
+    # - kagiroi:/punct/4_dan
+
+recognizer:
+  import_preset: default
+  patterns:
+    moran: "^C[a-z]*$"
+    mungyeong: '^K(?:(?:(?:\xEA[\xB0-\xBF]|\xEB[\x80-\xBF]|\xEC[\x80-\xBF]|\xED[\x80-\x9D])[\x80-\xBF]|\xED\x9E[\x80-\xA3]|\xE3\x84[\xB1-\xBF]|\xE3\x85[\x80-\xA3])|[a-zA-Z])*$'
+
+abc_segmentor:
+  extra_tags:
+    - kagiroi
+
+editor:
+  bindings:
+    Return: commit_script_text
+
+key_binder:
+  import_preset: default
+  bindings:
+    __patch:
+      - kagiroi:/key_bindings/paging_with_minus_equal # comment this line out to free -= for use in 4-dan layouts
+      - kagiroi:/key_bindings/kagiroi_switches
+
+emoji:
+  opencc_config: kagiroi_emoji.json
+  option_name: emoji
+  tips: none
+
+kagiroi_kanji:
+  dictionary: kagiroi_kanji
+
+mungyeong:
+  dictionary: mungyeong.extended
+  target: kagiroi_kanji
+  prefix: 'K'
+  tag: mungyeong
+  tips: "〔문경〕"
+  layout: dubeolsik
+  preedit_format:
+    - xform/^K//
+  auto_space: false
+
+moran:
+  dictionary: moran.chars
+  target: kagiroi_kanji
+  prefix: "C"
+  tips: "〔魔然〕"
+  tag: moran
+  preedit_format:
+    - xform/^C//
+
+kagiroi:
+  # Choose the input method layout. Whichever layout you select, 
+  # you must also add its corresponding schema file to the dependencies list in your schema
+  # See kagiroi_xxx.dict.yaml to check the actual definition of the layout
+  # options:
+  #  - romaji:  Similar to the standard Romaji input pre-installed on most operating systems
+  #  - szromaji: A custom, extended Romaji layout. (Note: Currently in early development)
+  #  - ansikana: Kana input (like a Japanese physical keyboard) adapted for a standard ANSI keyboard
+  #    (Note: Kana input will need a 4-dan alphabet/punctuator`)
+  layout: romaji
+  
+  speller:
+    __include: kagiroi:/alphabet/3_dan
+    # use 4_dan if you want to use ansikana or other layout that requires 4 rows of keys
+    # __include: kagiroi:/alphabet/4_dan
+  
+  translator:
+    sentence: 
+      # number of sentence candidates
+      size: 2
+
+      # allow table words to participate in sentence formation (only after being committed)
+      allow_table_word: false
+    
+    # Mapping input during translation, it's a convenient way to tweak input 
+    # without affecting the behavior of the kana speller
+    input_mapping:
+      # Explain trailing n as ん, this is useful when using romaji layout
+      # since you can avoid typing n twice to get ん
+      - xform/^(.*)n$/$1ん$/
+      # for szromaji users
+      # - xform/^(.*)a$/$1あ$/
+      # - xform/^(.*)i$/$1い$/
+      # - xform/^(.*)u$/$1う$/
+      # - xform/^(.*)e$/$1え$/
+      # - xform/^(.*)o$/$1お$/
+
+  # Gikun (義訓) is a powerful feature for personalizing your dictionary.
+  # It allows you to associate a non-standard reading (what you type) with a specific word or phrase (the result)
+  # For example: The word "未来" (standard reading: みらい), with Gikun, you could create
+  # a custom entry like "あす;未来" to make rime suggest "未来" when you type "あす"
+  gikun:
+    # Enable or disable the Gikun feature
+    enable: true
+    # The delimiter to separate the reading and the text of the word
+    # Note: This character must also be added to your `speller/alphabet` to be recognized by the speller
+    delimiter: ";"

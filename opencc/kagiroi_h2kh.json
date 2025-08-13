@@ -1,0 +1,34 @@
+{
+  "name": "Hiragana to Half-width Katakana",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "text",
+      "file": "kagiroi_h2k.txt"
+    }
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {
+            "type": "text",
+            "file": "kagiroi_h2k.txt"
+          }
+        ]
+      }
+    },
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {
+            "type": "text",
+            "file": "kagiroi_k2kh.txt"
+          }
+        ]
+      }
+    }
+  ]
+}

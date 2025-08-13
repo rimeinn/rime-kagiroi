@@ -1,0 +1,19 @@
+__build_info:
+  rime_version: 1.10.0
+  timestamps:
+    default: 1755047995
+    default.custom: 0
+    kagiroi_matrix.custom: 0
+    kagiroi_matrix.schema: 1755047996
+    key_bindings: 1755047996
+    key_bindings.custom: 0
+    punctuation: 1755047996
+    punctuation.custom: 0
+menu:
+  page_size: 5
+schema:
+  name: "kagiroi connection data"
+  schema_id: kagiroi_matrix
+  version: 1.0
+translator:
+  dictionary: kagiroi_matrix

@@ -1,0 +1,26 @@
+schema:
+  schema_id: kagiroi_romaji
+  name: kagiroi layout (romaji)
+  version: '20250717'
+
+speller:
+  __include: kagiroi:/alphabet/3_dan
+  # support Hepburn romanization
+  algebra:
+    # ti→chi、tya→cha
+    - derive/^t(?:(i)|y([aueo]))$/ch$1$2/
+    # tya→cya
+    - derive/^t(y[aiueo])$/c$1/
+    # zi→ji、zya→jya
+    - derive/^z(i|y[aiueo])$/j$1/
+    # hu→fu、hwa→fa
+    - derive/^h(?:(u)|w([aioe]))$/f$1$2/
+    # si→shi、sya→sha
+    - derive/^s(?:(i)|y([aueo]))$/sh$1$2/
+    # jya→ja
+    - derive/^jy([aueo])$/j$1/
+
+translator:
+  dictionary: kagiroi_romaji
+
+__include: kagiroi:/preset_for_layout

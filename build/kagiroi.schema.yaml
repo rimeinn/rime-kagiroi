@@ -1,0 +1,230 @@
+__build_info:
+  rime_version: 1.10.0
+  timestamps:
+    default: 1755047995
+    default.custom: 0
+    kagiroi: 1755047996
+    kagiroi.custom: 0
+    kagiroi.schema: 1755047996
+    key_bindings: 1755047996
+    key_bindings.custom: 0
+    punctuation: 1755047996
+    punctuation.custom: 0
+abc_segmentor:
+  extra_tags:
+    - kagiroi
+custom_phrase:
+  db_class: stabledb
+  dictionary: ""
+  enable_completion: false
+  enable_sentence: false
+  user_dict: kagiroi_custom_phrases
+editor:
+  bindings:
+    Return: commit_script_text
+emoji:
+  opencc_config: kagiroi_emoji.json
+  option_name: emoji
+  tips: none
+engine:
+  filters:
+    - "simplifier@emoji"
+    - uniquifier
+  processors:
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - "lua_processor@*kagiroi/kagiroi_kana_speller"
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - "table_translator@custom_phrase"
+    - "lua_translator@*kagiroi/kagiroi_translator"
+kagiroi:
+  gikun:
+    delimiter: ";"
+    enable: true
+  layout: romaji
+  speller:
+    alphabet: "-qwertyuiopasdfghjkl;zxcvbnm"
+  translator:
+    input_mapping: ["xform/^(.*)n$/$1ん$/"]
+    sentence: {allow_table_word: false, size: 2}
+kagiroi_kanji:
+  dictionary: kagiroi_kanji
+key_binder:
+  bindings:
+    - {accept: "Control+p", send: Up, when: composing}
+    - {accept: "Control+n", send: Down, when: composing}
+    - {accept: "Control+b", send: Left, when: composing}
+    - {accept: "Control+f", send: Right, when: composing}
+    - {accept: "Control+a", send: Home, when: composing}
+    - {accept: "Control+e", send: End, when: composing}
+    - {accept: "Control+d", send: Delete, when: composing}
+    - {accept: "Control+k", send: "Shift+Delete", when: composing}
+    - {accept: "Control+h", send: BackSpace, when: composing}
+    - {accept: "Control+g", send: Escape, when: composing}
+    - {accept: "Control+bracketleft", send: Escape, when: composing}
+    - {accept: "Control+y", send: Page_Up, when: composing}
+    - {accept: "Alt+v", send: Page_Up, when: composing}
+    - {accept: "Control+v", send: Page_Down, when: composing}
+    - {accept: ISO_Left_Tab, send: "Shift+Left", when: composing}
+    - {accept: "Shift+Tab", send: "Shift+Left", when: composing}
+    - {accept: Tab, send: "Shift+Right", when: composing}
+    - {accept: "Control+Shift+1", select: .next, when: always}
+    - {accept: "Control+Shift+2", toggle: ascii_mode, when: always}
+    - {accept: "Control+Shift+3", toggle: full_shape, when: always}
+    - {accept: "Control+Shift+4", toggle: simplification, when: always}
+    - {accept: "Control+Shift+5", toggle: extended_charset, when: always}
+    - {accept: "Control+Shift+exclam", select: .next, when: always}
+    - {accept: "Control+Shift+at", toggle: ascii_mode, when: always}
+    - {accept: "Control+Shift+numbersign", toggle: full_shape, when: always}
+    - {accept: "Control+Shift+dollar", toggle: simplification, when: always}
+    - {accept: "Control+Shift+percent", toggle: extended_charset, when: always}
+    - {accept: minus, send: Page_Up, when: paging}
+    - {accept: equal, send: Page_Down, when: has_menu}
+    - {accept: "Control+u", set_option: hiragana, when: composing}
+    - {accept: "Control+i", set_option: katakana, when: composing}
+    - {accept: "Control+o", set_option: hw_katakana, when: composing}
+    - {accept: "Control+q", toggle: emoji, when: has_menu}
+  import_preset: default
+menu:
+  page_size: 5
+moran:
+  dictionary: moran.chars
+  preedit_format:
+    - "xform/^C//"
+  prefix: C
+  tag: moran
+  target: kagiroi_kanji
+  tips: "〔魔然〕"
+mungyeong:
+  auto_space: false
+  dictionary: mungyeong.extended
+  layout: dubeolsik
+  preedit_format:
+    - "xform/^K//"
+  prefix: K
+  tag: mungyeong
+  target: kagiroi_kanji
+  tips: "〔문경〕"
+punctuator:
+  full_shape:
+    " ": {commit: "　"}
+    "!": {commit: "！"}
+    "\"": {pair: ["“", "”"]}
+    "#": ["＃", "⌘"]
+    "$": ["　'$'", "€", "£", "¥", "¢", "¤", "₩"]
+    "%": ["％", "°", "℃"]
+    "&": "＆"
+    "'": {pair: ["‘", "’"]}
+    "(": "（"
+    ")": "）"
+    "*": ["＊", "·", "・", "×", "※", "❂"]
+    "+": "＋"
+    ",": {commit: "、"}
+    .: {commit: "。"}
+    "/": ["・", "…", "/", "／", "÷"]
+    ":": {commit: "："}
+    ";": {commit: "；"}
+    "<": ["＜", "〈", "《"]
+    "=": ["＝", "々", "〃"]
+    ">": ["＞", "〉", "》"]
+    "?": {commit: "？"}
+    "@": ["＠", "☯"]
+    "[": ["「", "【", "〔", "［", "〚", "〘"]
+    "\\": ["￥", "＼"]
+    "]": ["」", "】", "〕", "］", "〛", "〙"]
+    "^": {commit: "＾"}
+    _: "＿"
+    "`": "｀"
+    "{": ["『", "〖", "｛"]
+    "|": ["·", "｜", "§", "¦"]
+    "}": ["』", "〗", "｝"]
+    "~": ["〜"]
+  half_shape:
+    "!": {commit: "！"}
+    "\"": {pair: ["“", "”"]}
+    "#": ["#", "№"]
+    "$": ["$", "€", "£", "¥", "¢", "¤", "₩"]
+    "%": ["%", "％", "°", "℃", "‰", "‱", "℉", "℅", "℆", "℀", "℁", "⅍"]
+    "&": "&"
+    "'": {pair: ["‘", "’"]}
+    "(": "（"
+    ")": "）"
+    "*": ["*", "＊", "·", "・", "×", "※", "❂", "⁂", "☮", "☯", "☣"]
+    "+": "+"
+    ",": ["、", "・", "，"]
+    .: ["。", "…", "．", .]
+    "/": ["・", "/", "／"]
+    ":": {commit: "："}
+    ";": {commit: "；"}
+    "<": ["＜", "〈", "《"]
+    "=": ["=", "々", "〃"]
+    ">": ["＞", "〉", "》"]
+    "?": {commit: "？"}
+    "@": ["@", "©", "®", "℗"]
+    "[": ["「", "【", "〔", "［", "〚", "〘"]
+    "\\": ["￥", "\\", "＼"]
+    "]": ["」", "】", "〕", "］", "〛", "〙"]
+    "^": {commit: "＾"}
+    _: "＿"
+    "`": ["`", "‵", "‶", "‷", "′", "″", "‴", "⁗"]
+    "{": ["『", "〖", "｛"]
+    "|": ["·", "・", "|", "｜", "§", "¦", "‖", "︴"]
+    "}": ["』", "〗", "｝"]
+    "~": ["～", "~", "˜", "˷", "ⸯ", "≈", "≋", "≃", "≅", "≇", "∽", "⋍", "≌", "﹏", "﹋", "﹌", "︴"]
+recognizer:
+  import_preset: default
+  patterns:
+    email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"
+    moran: "^C[a-z]*$"
+    mungyeong: "^K(?:(?:(?:\\xEA[\\xB0-\\xBF]|\\xEB[\\x80-\\xBF]|\\xEC[\\x80-\\xBF]|\\xED[\\x80-\\x9D])[\\x80-\\xBF]|\\xED\\x9E[\\x80-\\xA3]|\\xE3\\x84[\\xB1-\\xBF]|\\xE3\\x85[\\x80-\\xA3])|[a-zA-Z])*$"
+    url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$|^[a-z]+[.].+$"
+schema:
+  author:
+    - kuroame
+  dependencies:
+    - kagiroi_romaji
+    - kagiroi_kanji
+    - kagiroi_ansikana
+    - kagiroi_szromaji
+    - kagiroi_matrix
+  description: |
+    スマートな日本語入力。
+
+  icon: kagiroi.ico
+  name: "カギロイ"
+  schema_id: kagiroi
+  version: 20250717
+speller:
+  alphabet: "ょぁぃぅぇぉあいうえおかきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわゐ𛄟ゑをんゃっゕゖーゅabcdefghijklmnopqrstuvwxyz-;"
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: ["あ", "英字"]
+  - options: [hiragana, katakana, hw_katakana]
+    reset: 0
+    states: ["ひらがな", "カタカナ", "ｶﾀｶﾅ"]
+  - name: full_shape
+    states: ["半角", "全角"]
+  - name: ascii_punct
+    states: ["。，", "．，"]
+  - name: emoji
+    states: ["🈚", "🈶"]
+translator:
+  dictionary: kagiroi
+  enable_completion: false
+  enable_sentence: false
+  enable_user_dict: true
+  tag: kagiroi

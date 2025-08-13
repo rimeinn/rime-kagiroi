@@ -1,0 +1,13 @@
+# encoding: utf-8
+---
+recipe:
+  Rx: rime-kagiroi
+  description: >-
+    Rimeフレームワークの日本語入力設定
+
+install_files: >-
+  lua/kagiroi/*.lua
+  opencc/*
+  kagiroi*.yaml
+  kagiroi.ico
+  build/*

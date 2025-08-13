@@ -1,0 +1,13 @@
+schema:
+  schema_id: kagiroi_kanji
+  name: kagiroi kanji
+  version: '20250717'
+engine:
+speller:
+  __include: kagiroi:/alphabet/hira
+translator:
+  dictionary: kagiroi_kanji
+  enable_completion: false
+  enable_user_dict: false
+  enable_sentence: false
+  tag: kagiroi

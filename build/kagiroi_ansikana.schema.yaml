@@ -1,0 +1,27 @@
+__build_info:
+  rime_version: 1.10.0
+  timestamps:
+    default: 1755047995
+    default.custom: 0
+    kagiroi: 1755047996
+    kagiroi.custom: 0
+    kagiroi_ansikana.custom: 0
+    kagiroi_ansikana.schema: 1755047996
+    key_bindings: 1755047996
+    key_bindings.custom: 0
+    punctuation: 1755047996
+    punctuation.custom: 0
+menu:
+  page_size: 5
+schema:
+  name: "kagiroi layout (ansikana)"
+  schema_id: kagiroi_ansikana
+  version: 20250717
+speller:
+  alphabet: "123#4$5%6^7&8*9(0)-_=\\qweErtyuiop=[]asdfghjkl;'\"zZxcvbnm,.`"
+translator:
+  dictionary: kagiroi_ansikana
+  enable_completion: false
+  enable_sentence: true
+  enable_user_dict: false
+  tag: kagiroi

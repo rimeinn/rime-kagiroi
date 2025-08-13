@@ -1,0 +1,7 @@
+schema:
+  schema_id: kagiroi_matrix
+  name: kagiroi connection data
+  version: "1.0"
+engine:
+translator:
+  dictionary: kagiroi_matrix

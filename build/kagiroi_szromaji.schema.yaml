@@ -1,0 +1,27 @@
+__build_info:
+  rime_version: 1.10.0
+  timestamps:
+    default: 1755047995
+    default.custom: 0
+    kagiroi: 1755047996
+    kagiroi.custom: 0
+    kagiroi_szromaji.custom: 0
+    kagiroi_szromaji.schema: 1755047996
+    key_bindings: 1755047996
+    key_bindings.custom: 0
+    punctuation: 1755047996
+    punctuation.custom: 0
+menu:
+  page_size: 5
+schema:
+  name: "kagiroi layout (sz romaji)"
+  schema_id: kagiroi_szromaji
+  version: 20250714
+speller:
+  alphabet: "-qwertyuiopasdfghjkl;zxcvbnm"
+translator:
+  dictionary: kagiroi_szromaji
+  enable_completion: false
+  enable_sentence: true
+  enable_user_dict: false
+  tag: kagiroi

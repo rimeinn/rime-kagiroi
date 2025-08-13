@@ -1,0 +1,12 @@
+schema:
+  schema_id: kagiroi_szromaji
+  name: kagiroi layout (sz romaji)
+  version: '20250714'
+
+speller:
+  __include: kagiroi:/alphabet/3_dan
+
+translator:
+  dictionary: kagiroi_szromaji
+
+__include: kagiroi:/preset_for_layout

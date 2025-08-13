@@ -1,0 +1,34 @@
+__build_info:
+  rime_version: 1.10.0
+  timestamps:
+    default: 1755047995
+    default.custom: 0
+    kagiroi: 1755047996
+    kagiroi.custom: 0
+    kagiroi_romaji.custom: 0
+    kagiroi_romaji.schema: 1755047996
+    key_bindings: 1755047996
+    key_bindings.custom: 0
+    punctuation: 1755047996
+    punctuation.custom: 0
+menu:
+  page_size: 5
+schema:
+  name: "kagiroi layout (romaji)"
+  schema_id: kagiroi_romaji
+  version: 20250717
+speller:
+  algebra:
+    - "derive/^t(?:(i)|y([aueo]))$/ch$1$2/"
+    - "derive/^t(y[aiueo])$/c$1/"
+    - "derive/^z(i|y[aiueo])$/j$1/"
+    - "derive/^h(?:(u)|w([aioe]))$/f$1$2/"
+    - "derive/^s(?:(i)|y([aueo]))$/sh$1$2/"
+    - "derive/^jy([aueo])$/j$1/"
+  alphabet: "-qwertyuiopasdfghjkl;zxcvbnm"
+translator:
+  dictionary: kagiroi_romaji
+  enable_completion: false
+  enable_sentence: true
+  enable_user_dict: false
+  tag: kagiroi

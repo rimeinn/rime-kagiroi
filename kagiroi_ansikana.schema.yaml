@@ -1,0 +1,11 @@
+schema:
+  schema_id: kagiroi_ansikana
+  name: kagiroi layout (ansikana)
+  version: '20250717'
+speller:
+  __include: kagiroi:/alphabet/4_dan
+
+translator:
+  dictionary: kagiroi_ansikana
+
+__include: kagiroi:/preset_for_layout
