@@ -9,7 +9,7 @@
 ---
 name: kagiroi_kanji
 version: 20250715
-sort: by_weight
+sort: original
 columns:
   - text
   - code
