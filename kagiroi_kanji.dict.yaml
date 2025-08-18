@@ -10,10 +10,8 @@
 name: kagiroi_kanji
 version: 20250715
 sort: original
-columns:
-  - text
-  - code
-  - weight
+import_tables:
+  - kagiroi_symbols
 ...
 
 亜	あ
