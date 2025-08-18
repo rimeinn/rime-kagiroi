@@ -25,7 +25,7 @@ local function lex2cand(seg, lex, env)
 end
 
 function Top.init(env)
-    env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "table_translator")
+    env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "script_translator")
     env.matrix_lookup = ReverseLookup("kagiroi_matrix")
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
