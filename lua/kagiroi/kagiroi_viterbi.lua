@@ -442,6 +442,7 @@ function Module:_weave_dummy_iter(smart_iter)
     local current_dummy_index = 1
     local high_quality_count = 7
     local high_quality_cost = 46040
+    local dummy_cost = high_quality_cost + 1
     local surface = {}
     local max_dummy_surface_len = 4
     local next_node_cost = 0
@@ -449,7 +450,7 @@ function Module:_weave_dummy_iter(smart_iter)
         if current_dummy_index > #surface then
             return nil
         end
-        local dummy_node = Node:new(1920, 1920, 46041, surface[current_dummy_index][1], surface[current_dummy_index][2],
+        local dummy_node = Node:new(1920, 1920, dummy_cost, surface[current_dummy_index][1], surface[current_dummy_index][2],
             "dummy")
         current_dummy_index = current_dummy_index + 1
         return dummy_node
@@ -482,6 +483,7 @@ function Module:_weave_dummy_iter(smart_iter)
                     table.insert(surface,
                         {cur_smart_node.surface, self.hira2kata_opencc:convert(cur_smart_node.surface)})
                 end
+                dummy_cost = cur_smart_node.cost + 1
                 return cur_smart_node
             end
         end
@@ -583,18 +585,16 @@ function Module:best_n_prefix()
             return nil
         end
         local cur_node = deviation.sect_node
-        local cost = self:_get_matrix_cost(0, cur_node.left_id) + self:_get_prefix_penalty(cur_node.left_id)
+        local cost = deviation.delta + min_cost
         local lex_table = {}
         while true do
             -- keep it reverse to compatible with _assemble
             table.insert(lex_table, 1, cur_node)
-            cost = cost + cur_node.wcost
             if cur_node == deviation.node then
                 break
             end
             local next_node = cur_node.rsucc
             if next_node then
-                cost = cost + self:_get_matrix_cost(cur_node.right_id, next_node.left_id)
                 cur_node = next_node
             else
                 break

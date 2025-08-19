@@ -9,9 +9,9 @@ local Top = {}
 local viterbi = require("kagiroi/kagiroi_viterbi")
 
 -- build rime candidates
-local function lex2cand(seg, lex, env)
+local function lex2cand(seg, lex, env, comment)
     local dest_hiragana_str = lex.surface
-    local preedit = ""
+    local preedit = lex.surface
     local start = seg.start
     local _end = seg.start + #dest_hiragana_str
     local new_entry = DictEntry()
@@ -21,7 +21,7 @@ local function lex2cand(seg, lex, env)
     -- just use hiragana str as custom code
     new_entry.custom_code = kagiroi.append_trailing_space(dest_hiragana_str)
     local new_cand = Phrase(env.mem, "kagiroi_lex", start, _end, new_entry):toCandidate()
-    return ShadowCandidate(new_cand, "kagiroi", lex.candidate, "")
+    return ShadowCandidate(new_cand, "kagiroi", lex.candidate, comment or "")
 end
 
 function Top.init(env)
@@ -131,7 +131,7 @@ function Top.henkan(input, projected, seg, env)
     local katakana = env.engine.context:get_option("katakana")
     local hw_katakana = env.engine.context:get_option("hw_katakana")
     if katakana or hw_katakana then
-        Top.katakana(input, trimmed, seg, hw_katakana, env)
+        yield(Top.katakana(input, trimmed, seg, hw_katakana, env))
     end
     -- find the best n sentences matching the complete input
 
@@ -147,18 +147,32 @@ function Top.henkan(input, projected, seg, env)
 
     -- find the best n prefixes for partial selecting,
     --    insert some kanji candidates after high-quality candidates
-    local best_n = env.viterbi:best_n_prefix()
-    local kanji_emitted = false
-    local KANJI_CANDIDATE_COST_THRESHOLD = 368320
-    for phrase in best_n do
-        if not kanji_emitted and phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD then
-            Top.kanji(trimmed, seg, env)
-            kanji_emitted = true
+    local prefix_iter = env.viterbi:best_n_prefix()
+    local kanji_iter = Top.kanji(trimmed, seg, env)
+    local KANJI_CANDIDATE_COST_THRESHOLD_0 = 10000
+    local KANJI_CANDIDATE_COST_THRESHOLD_1 = 245546
+    local current_kanji = kanji_iter()
+    for phrase in prefix_iter do
+        while current_kanji do
+            if phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD_1 then
+                yield(current_kanji)
+                current_kanji = kanji_iter()
+            elseif phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD_0 then
+                if current_kanji.preedit == trimmed and phrase.surface ~= trimmed then
+                    yield(current_kanji)
+                    current_kanji = kanji_iter()
+                else
+                    break
+                end
+            else
+                break
+            end
         end
         yield(lex2cand(seg, phrase, env))
     end
-    if not kanji_emitted then
-        Top.kanji(trimmed, seg, env)
+    while current_kanji do
+        yield(current_kanji)
+        current_kanji = kanji_iter()
     end
 end
 
@@ -184,32 +198,37 @@ function Top.katakana(input, trimmed, seg, is_half_width, env)
         local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
         local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end, katakana_halfwidth_str_trimmed, "")
         katakana_halfwidth_cand.preedit = katakana_halfwidth_str
-        yield(katakana_halfwidth_cand)
+        return katakana_halfwidth_cand
     else
         local katakana_str_trimmed = env.hira2kata_opencc:convert(trimmed)
         local katakana_str = env.hira2kata_opencc:convert(input)
         local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str_trimmed, "")
         katakana_cand.preedit = katakana_str
-        yield(katakana_cand)
+        return katakana_cand
     end
 end
 
 function Top.kanji(input, seg, env)
     local xlation = env.kanji_xlator:query(input, seg)
-    if xlation then
-        for cand in xlation:iter() do
-            -- TODO avoid generating sentence candidates
-            if cand.type == "sentence" then
-                goto continue
+    if not xlation then
+        return function() return nil end
+    end
+    local next, iter = xlation:iter()
+    return function()
+        while true do
+            local cand = next(iter)
+            if not cand then
+                return nil
             end
-            local lex = {
-                candidate = cand.text,
-                left_id = 1920,
-                right_id = 1920,
-                surface = cand.preedit
-            }
-            yield(lex2cand(seg, lex, env))
-            ::continue::
+            if cand.type ~= "sentence" then
+                local lex = {
+                    candidate = cand.text,
+                    left_id = 1920,
+                    right_id = 1920,
+                    surface = cand.preedit
+                }
+                return lex2cand(seg, lex, env)
+            end
         end
     end
 end
