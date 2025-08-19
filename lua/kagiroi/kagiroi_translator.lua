@@ -11,7 +11,7 @@ local viterbi = require("kagiroi/kagiroi_viterbi")
 -- build rime candidates
 local function lex2cand(seg, lex, env, comment)
     local dest_hiragana_str = lex.surface
-    local preedit = lex.surface
+    local preedit = ""
     local start = seg.start
     local _end = seg.start + #dest_hiragana_str
     local new_entry = DictEntry()
@@ -151,16 +151,16 @@ function Top.henkan(input, projected, seg, env)
     local kanji_iter = Top.kanji(trimmed, seg, env)
     local KANJI_CANDIDATE_COST_THRESHOLD_0 = 10000
     local KANJI_CANDIDATE_COST_THRESHOLD_1 = 245546
-    local current_kanji = kanji_iter()
+    local kanji = kanji_iter()
     for phrase in prefix_iter do
-        while current_kanji do
+        while kanji do
             if phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD_1 then
-                yield(current_kanji)
-                current_kanji = kanji_iter()
+                yield(lex2cand(seg, kanji, env))
+                kanji = kanji_iter()
             elseif phrase.cost > KANJI_CANDIDATE_COST_THRESHOLD_0 then
-                if current_kanji.preedit == trimmed and phrase.surface ~= trimmed then
-                    yield(current_kanji)
-                    current_kanji = kanji_iter()
+                if kanji.surface == trimmed and phrase.surface ~= trimmed then
+                    yield(lex2cand(seg, kanji, env))
+                    kanji = kanji_iter()
                 else
                     break
                 end
@@ -170,9 +170,9 @@ function Top.henkan(input, projected, seg, env)
         end
         yield(lex2cand(seg, phrase, env))
     end
-    while current_kanji do
-        yield(current_kanji)
-        current_kanji = kanji_iter()
+    while kanji do
+        yield(lex2cand(seg, kanji, env))
+        kanji = kanji_iter()
     end
 end
 
@@ -227,7 +227,7 @@ function Top.kanji(input, seg, env)
                     right_id = 1920,
                     surface = cand.preedit
                 }
-                return lex2cand(seg, lex, env)
+                return lex
             end
         end
     end
