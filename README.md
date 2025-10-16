@@ -1,5 +1,8 @@
 [简体中文](README-zh-hans.md)
 
+
+[オンライン体験](https://kagiroi.pfeiwu.com/demo)
+
 # 概要
 Rime Input Method Engineで作った日本語IME
 
