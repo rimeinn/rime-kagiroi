@@ -25,12 +25,20 @@ local function lex2cand(seg, lex, env, comment)
 end
 
 function Top.init(env)
-    env.kanji_xlator = Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "script_translator")
-    env.matrix_lookup = ReverseLookup("kagiroi_matrix")
+    env.kanji_xlator = kagiroi.Thunk(function()
+            return Component.Translator(env.engine, Schema('kagiroi_kanji'), "translator", "script_translator")
+    end)
+    env.matrix_lookup = kagiroi.Thunk(function()
+            return ReverseLookup("kagiroi_matrix")
+    end)
     env.disable_user_dict_for_patterns = env.engine.schema.config:get_list(
         "kagiroi/translator/disable_user_dict_for_patterns")
-    env.hira2kata_halfwidth_opencc = Opencc("kagiroi_h2kh.json")
-    env.hira2kata_opencc = Opencc("kagiroi_h2k.json")
+    env.hira2kata_halfwidth_opencc = kagiroi.Thunk(function()
+            return Opencc("kagiroi_h2kh.json")
+    end)
+    env.hira2kata_opencc = kagiroi.Thunk(function()
+            return Opencc("kagiroi_h2k.json")
+    end)
     env.mem = Memory(env.engine, Schema('kagiroi'))
     env.viterbi = viterbi.new(env)
     -- Update the user dict when our candidate is committed.
@@ -102,7 +110,6 @@ end
 function Top.fini(env)
     env.mem:disconnect()
     env.pseudo_xlator = nil
-    env.kanji_xlator = nil
     env.delete_notifier:disconnect()
     env.viterbi = nil
     collectgarbage()
@@ -194,14 +201,14 @@ end
 
 function Top.katakana(input, trimmed, seg, is_half_width, env)
     if is_half_width then
-        local katakana_halfwidth_str_trimmed = env.hira2kata_halfwidth_opencc:convert(trimmed)
-        local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc:convert(input)
+        local katakana_halfwidth_str_trimmed = env.hira2kata_halfwidth_opencc():convert(trimmed)
+        local katakana_halfwidth_str = env.hira2kata_halfwidth_opencc():convert(input)
         local katakana_halfwidth_cand = Candidate("kagiroi", seg.start, seg._end, katakana_halfwidth_str_trimmed, "")
         katakana_halfwidth_cand.preedit = katakana_halfwidth_str
         return katakana_halfwidth_cand
     else
-        local katakana_str_trimmed = env.hira2kata_opencc:convert(trimmed)
-        local katakana_str = env.hira2kata_opencc:convert(input)
+        local katakana_str_trimmed = env.hira2kata_opencc():convert(trimmed)
+        local katakana_str = env.hira2kata_opencc():convert(input)
         local katakana_cand = Candidate("kagiroi", seg.start, seg._end, katakana_str_trimmed, "")
         katakana_cand.preedit = katakana_str
         return katakana_cand
@@ -209,7 +216,7 @@ function Top.katakana(input, trimmed, seg, is_half_width, env)
 end
 
 function Top.kanji(input, seg, env)
-    local xlation = env.kanji_xlator:query(input, seg)
+    local xlation = env.kanji_xlator():query(input, seg)
     if not xlation then
         return function() return nil end
     end
