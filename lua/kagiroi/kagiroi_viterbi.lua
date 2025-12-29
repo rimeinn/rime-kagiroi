@@ -458,7 +458,7 @@ function Module:_weave_dummy_iter(smart_iter)
 
     if #self.lattice[1] == 0 then
         table.insert(surface, {self.surface, self.surface})
-        table.insert(surface, {self.surface, self.hira2kata_opencc:convert(self.surface)})
+        table.insert(surface, {self.surface, self.hira2kata_opencc():convert(self.surface)})
         return dummy_node_iter
     end
 
@@ -481,7 +481,7 @@ function Module:_weave_dummy_iter(smart_iter)
                 if (utf8.len(cur_smart_node.surface) < max_dummy_surface_len) then
                     table.insert(surface, {cur_smart_node.surface, cur_smart_node.surface})
                     table.insert(surface,
-                        {cur_smart_node.surface, self.hira2kata_opencc:convert(cur_smart_node.surface)})
+                        {cur_smart_node.surface, self.hira2kata_opencc():convert(cur_smart_node.surface)})
                 end
                 dummy_cost = cur_smart_node.cost + 1
                 return cur_smart_node
@@ -702,7 +702,9 @@ end
 
 function Module.new(env)
     local o = {
-        hira2kata_opencc = Opencc("kagiroi_h2k.json"),
+        hira2kata_opencc = kagiroi.Thunk(function()
+            return Opencc("kagiroi_h2k.json")
+        end),
         lattice = {}, -- lattice for viterbi algorithm
         start_index_by_col = {},
         search_beam_width = 50,
@@ -777,7 +779,7 @@ function Module.new(env)
             end
         end,
         query_matrix = function(prev_id, next_id)
-            local res = env.matrix_lookup:lookup(prev_id .. " " .. next_id)
+            local res = env.matrix_lookup():lookup(prev_id .. " " .. next_id)
             if not res or res == "" then
                 return math.huge
             end
