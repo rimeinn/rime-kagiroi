@@ -174,4 +174,14 @@ function Module.trim_non_kana_trailing(s)
     end
 end
 
+function Module.Thunk(functor)
+    local result = nil
+    return function()
+       if result == nil then
+           result = functor()
+       end
+       return result
+    end
+end
+
 return Module
