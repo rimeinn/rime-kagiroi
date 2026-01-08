@@ -1,15 +1,15 @@
 __build_info:
   rime_version: 1.10.0
   timestamps:
-    default: 1767676539
+    default: 1767844508
     default.custom: 0
-    kagiroi: 1767676539
+    kagiroi: 1767844508
     kagiroi.custom: 0
     kagiroi_kanji.custom: 0
-    kagiroi_kanji.schema: 1767676539
-    key_bindings: 1767676540
+    kagiroi_kanji.schema: 1767844508
+    key_bindings: 1767844509
     key_bindings.custom: 0
-    punctuation: 1767676540
+    punctuation: 1767844509
     punctuation.custom: 0
 menu:
   page_size: 5
