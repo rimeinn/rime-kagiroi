@@ -7,6 +7,7 @@
 - 使用Viterbi算法对假名序列进行转换
 - 內置罗马字、假名布局，也可以自行依据这些配置轻松地加入其他布局
 - 支持实时或者在kagiroi.dict.yaml里添加自定义词汇
+- 支持使用自然码辅码进行辅助筛选，参见 [℞ rime-mkm](https://github.com/rimeinn/rime-mkm)
 
 # 安装
 ℞ `rimeinn/rime-kagiroi`
