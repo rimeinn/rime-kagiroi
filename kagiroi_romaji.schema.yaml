@@ -19,6 +19,8 @@ speller:
     - derive/^s(?:(i)|y([aueo]))$/sh$1$2/
     # jya→ja
     - derive/^jy([aueo])$/j$1/
+    # la->xa
+    - derive/^l((?:ts|[ywkt])?[aiueo])/x$1/
 
 translator:
   dictionary: kagiroi_romaji
