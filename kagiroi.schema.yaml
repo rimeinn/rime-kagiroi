@@ -179,5 +179,3 @@ kagiroi:
     # The delimiter to separate the reading and the text of the word
     # Note: This character must also be added to your `speller/alphabet` to be recognized by the speller
     delimiter: ";"
-
-__patch: kagiroi.custom:/patch?
