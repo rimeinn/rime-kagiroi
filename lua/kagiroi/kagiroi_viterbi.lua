@@ -664,8 +664,12 @@ function Module:best_n()
     local node_to_return = root
     local next_node = nil
     children_deviate(root)
+    local seen_counter = 0
     return function()
         while true do
+            if seen_counter > 100 then
+                return nil
+            end
             if next_node then
                 sibling_deviate(next_node)
                 children_deviate(next_node)
@@ -678,9 +682,11 @@ function Module:best_n()
                     node_to_return = nil
                 end
                 if seen_candidate[assembled.candidate] == nil then
+                    seen_counter = 0
                     seen_candidate[assembled.candidate] = 1
                     return assembled
                 end
+                seen_counter = seen_counter + 1
             else
                 return nil
             end
