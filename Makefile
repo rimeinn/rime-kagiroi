@@ -16,6 +16,7 @@ MOZC_DICT := kagiroi.mozc.dict.yaml
 NICO_DICT := kagiroi.nico.dict.yaml
 MATRIX_DICT := kagiroi_matrix.dict.yaml
 EMOJI_DICT := opencc/kagiroi_emoji.txt
+SEGMENTER_LUA := lua/kagiroi/segmenter.lua
 
 # Versioning
 CURRENT_DATE := $(shell date +%Y%m%d)
@@ -57,7 +58,7 @@ all: install
 install: build
 	@echo "Done."
 
-build: $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT) $(EMOJI_DICT)
+build: $(MOZC_DICT) $(NICO_DICT) $(MATRIX_DICT) $(EMOJI_DICT) $(SEGMENTER_LUA)
 	@echo "All dictionaries have been built."
 
 clean:
@@ -84,14 +85,12 @@ update_mozc:
 $(MOZC_DICT): update_mozc
 	@printf '%s\n' "$$MOZC_DICT_HEADER" > $@
 	@( \
-		cat mozc/src/data/dictionary_oss/dictionary*.txt | tr '\t' ',' | grep -v '^,'; \
+		cat mozc/src/data/dictionary_oss/dictionary*.txt; \
 	) | \
-	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then \
-		grep -v -x -f lua/kagiroi/dic/lex_excluded.csv; \
-	else \
-		cat; \
-	fi | \
-	awk -F',' 'NF>=5 {print $$5"|"$$2" "$$3"\t"$$1"\t"$$4}' >> $@
+	uv run python tools/convert_mozc_dictionary.py \
+		--mozc-id-def mozc/src/data/dictionary_oss/id.def \
+		--kagiroi-id-def lua/kagiroi/dic/kagiroi_id.def \
+		--exclude lua/kagiroi/dic/lex_excluded.csv >> $@
 
 # Generates the Nico Nico dictionary
 $(NICO_DICT): update_mozc
@@ -105,8 +104,8 @@ $(NICO_DICT): update_mozc
 		iconv -f UTF-16LE -t UTF-8 nicoime_msime.txt \
 	) | \
 		awk -F'\t' 'BEGIN{OFS="\t"} {gsub("ヴ", "ゔ", $$1); print}' | \
-		poetry run tools/filter_nico_dictionary.py | \
-		poetry run tools/convert_jisho.py mozc/src/data/dictionary_oss/id.def 8000 | \
+		uv run python tools/filter_nico_dictionary.py | \
+		uv run python tools/convert_jisho.py lua/kagiroi/dic/kagiroi_id.def 8000 | \
 		tr '\t' ',' | \
 		grep -v '^,' | \
 	if [ -f lua/kagiroi/dic/lex_excluded.csv ]; then \
@@ -121,10 +120,19 @@ $(NICO_DICT): update_mozc
 $(MATRIX_DICT):
 	@printf '%s\n' "$$MATRIX_DICT_HEADER" > $@
 	@( \
-		poetry run ./tools/generate_matrix_def.py; \
-		poetry run ./tools/prefix_suffix_penalty.py; \
+		uv run python ./tools/generate_matrix_def.py \
+			--mozc-id-def mozc/src/data/dictionary_oss/id.def \
+			--kagiroi-id-def lua/kagiroi/dic/kagiroi_id.def; \
+		uv run python ./tools/prefix_suffix_penalty.py; \
 		cat lua/kagiroi/dic/matrix_custom.def \
 	) | awk '{print $$1" "$$2"\t"$$3}' >> $@
+
+# Generates the segmenter boundary rules
+$(SEGMENTER_LUA): update_mozc
+	uv run python tools/gen_segmenter_code_lua.py \
+		lua/kagiroi/dic/kagiroi_id.def \
+		mozc/src/data/rules/special_pos.def \
+		mozc/src/data/rules/segmenter.def > $@
 
 # Generates the emoji dictionary
 $(EMOJI_DICT): update_mozc

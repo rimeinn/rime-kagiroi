@@ -118,7 +118,7 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     
-    id_file = project_root / "mozc" / "src" / "data" / "dictionary_oss" / "id.def"
+    id_file = project_root / "lua" / "kagiroi" / "dic" / "kagiroi_id.def"
     boundary_file = project_root / "mozc" / "src" / "data" / "rules" / "boundary.def"
     
     if not id_file.exists():

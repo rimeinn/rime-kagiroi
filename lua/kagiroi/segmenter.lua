@@ -3,8 +3,8 @@
 local segmenter = {}
 
 -- Constants
-segmenter.L_SIZE = 2673
-segmenter.R_SIZE = 2673
+segmenter.L_SIZE = 2675
+segmenter.R_SIZE = 2675
 
 -- Boundary checking function
 -- @param rid: Right node POS ID (uint16_t)
