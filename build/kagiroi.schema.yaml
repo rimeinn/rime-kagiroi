@@ -1,14 +1,14 @@
 __build_info:
   rime_version: 1.10.0
   timestamps:
-    default: 1778727455
+    default: 1778809915
     default.custom: 0
-    kagiroi: 1778727456
+    kagiroi: 1778809915
     kagiroi.custom: 0
-    kagiroi.schema: 1778727456
-    key_bindings: 1778727456
+    kagiroi.schema: 1778809915
+    key_bindings: 1778809916
     key_bindings.custom: 0
-    punctuation: 1778727456
+    punctuation: 1778809916
     punctuation.custom: 0
 abc_segmentor:
   extra_tags:
