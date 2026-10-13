@@ -1,0 +1,266 @@
+# Run through tools/test_mkm.py with the three dependency checkouts.
+schema: moran
+source_dir: .
+script: function eq(a,b) print('actual=' .. tostring(a) .. ' expected=' .. tostring(b));
+  return a == b end
+deploy:
+  default:
+    tests:
+    - send: omgksrnr
+      assert: eq(preedit, "한국")
+    - send: omgksrnr{BackSpace}
+      assert: eq(preedit, "한구")
+    - send: omgksrnr{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "한")
+    - send: omgks{BackSpace}
+      assert: eq(preedit, "하")
+    - send: omgks{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㅎ")
+    - send: omr{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgks{BackSpace}s
+      assert: eq(preedit, "한")
+    - send: omekfr{BackSpace}
+      assert: eq(preedit, "달")
+    - send: omekfr{BackSpace}a
+      assert: eq(preedit, "닮")
+    - send: omrhk
+      assert: eq(preedit, "과")
+    - send: omrhk{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omrhk{BackSpace}l
+      assert: eq(preedit, "괴")
+    - send: omhk{BackSpace}
+      assert: eq(preedit, "ㅗ")
+    - send: omrnp{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omrhl{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omrml{BackSpace}
+      assert: eq(preedit, "그")
+    - send: omR{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrkR{BackSpace}
+      assert: eq(preedit, "가")
+    - send: omgksrnr{Home}{BackSpace}
+      assert: eq(preedit, "한국")
+    - send: omgksrnr{Home}{Delete}
+      assert: eq(preedit, "m한국")
+    - send: omrhk{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrhk{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrhks{BackSpace}
+      assert: eq(preedit, "과")
+    - send: omrho
+      assert: eq(preedit, "괘")
+    - send: omrho{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omrho{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrho{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrhos{BackSpace}
+      assert: eq(preedit, "괘")
+    - send: omrhl
+      assert: eq(preedit, "괴")
+    - send: omrhl{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrhl{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrhls{BackSpace}
+      assert: eq(preedit, "괴")
+    - send: omrnj
+      assert: eq(preedit, "궈")
+    - send: omrnj{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omrnj{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrnj{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrnjs{BackSpace}
+      assert: eq(preedit, "궈")
+    - send: omrnp
+      assert: eq(preedit, "궤")
+    - send: omrnp{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrnp{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrnps{BackSpace}
+      assert: eq(preedit, "궤")
+    - send: omrnl
+      assert: eq(preedit, "귀")
+    - send: omrnl{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omrnl{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrnl{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrnls{BackSpace}
+      assert: eq(preedit, "귀")
+    - send: omrml
+      assert: eq(preedit, "긔")
+    - send: omrml{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrml{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrmls{BackSpace}
+      assert: eq(preedit, "긔")
+    - send: omhk{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omrhk{BackSpace}k
+      assert: eq(preedit, "과")
+    - send: omrhk{BackSpace}s
+      assert: eq(preedit, "곤")
+    - send: omro{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omrO{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omr{BackSpace}{BackSpace}
+      assert: eq(preedit, "o")
+    - send: omr{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, nil)
+    - send: okkana{BackSpace}
+      assert: eq(preedit, "か")
+    - send: okkana{BackSpace}
+      assert: eq(preedit, "か")
+    - send: okkana{BackSpace}{BackSpace}
+      assert: eq(preedit, "ok〔カギロイ〕")
+    - send: okkana{BackSpace}ki
+      assert: eq(preedit, "かき")
+    - send: oka{BackSpace}{BackSpace}
+      assert: eq(preedit, "o")
+    - send: oka{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, nil)
+  romaja:
+    patch:
+      mungyeong/layout: romaja
+    tests:
+    - send: omg
+      assert: preedit == "ㄱ"
+    - send: oma
+      assert: preedit == "ㅏ"
+    - send: omx
+      assert: preedit == "ㅇ"
+    - send: omG
+      assert: preedit == "ㄲ"
+    - send: omJ
+      assert: preedit == "ㅉ"
+    - send: omS
+      assert: preedit == "ㅆ"
+    - send: omga
+      assert: preedit == "가"
+    - send: omna
+      assert: preedit == "나"
+    - send: omxa
+      assert: preedit == "아"
+    - send: omgag
+      assert: preedit == "각"
+    - send: omhan
+      assert: preedit == "한"
+    - send: ombang
+      assert: preedit == "방"
+    - send: omdalg
+      assert: preedit == "닭"
+    - send: omxeobs
+      assert: preedit == "없"
+    - send: omgags
+      assert: preedit == "갃"
+    - send: omhang
+      assert: preedit == "항"
+    - send: omhangug
+      assert: preedit == "한국"
+    - send: omhangug{BackSpace}
+      assert: preedit == "한구"
+    - send: omhangug{BackSpace}{BackSpace}{BackSpace}
+      assert: preedit == "한"
+    - send: omhan{BackSpace}
+      assert: preedit == "하"
+    - send: omhan{BackSpace}{BackSpace}
+      assert: preedit == "ㅎ"
+    - send: omg{BackSpace}
+      assert: preedit == "om〔문경〕"
+    - send: omhangug{BackSpace}g
+      assert: preedit == "한국"
+    - send: omhan{BackSpace}n
+      assert: preedit == "한"
+    - send: omdalg{BackSpace}m
+      assert: preedit == "닮"
+    - send: omgwa
+      assert: eq(preedit, "과")
+    - send: omgwa{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omgwa{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgwa{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgwan{BackSpace}
+      assert: eq(preedit, "과")
+    - send: omgwae
+      assert: eq(preedit, "괘")
+    - send: omgwae{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omgwae{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgwae{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgwaen{BackSpace}
+      assert: eq(preedit, "괘")
+    - send: omgoe
+      assert: eq(preedit, "괴")
+    - send: omgoe{BackSpace}
+      assert: eq(preedit, "고")
+    - send: omgoe{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgoe{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgoen{BackSpace}
+      assert: eq(preedit, "괴")
+    - send: omgwo
+      assert: eq(preedit, "궈")
+    - send: omgwo{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omgwo{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgwo{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgwon{BackSpace}
+      assert: eq(preedit, "궈")
+    - send: omgwe
+      assert: eq(preedit, "궤")
+    - send: omgwe{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omgwe{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgwe{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgwen{BackSpace}
+      assert: eq(preedit, "궤")
+    - send: omgwi
+      assert: eq(preedit, "귀")
+    - send: omgwi{BackSpace}
+      assert: eq(preedit, "구")
+    - send: omgwi{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgwi{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omgwin{BackSpace}
+      assert: eq(preedit, "귀")
+    - send: omgui
+      assert: eq(preedit, "긔")
+    - send: omgui{BackSpace}
+      assert: eq(preedit, "그")
+    - send: omgui{BackSpace}{BackSpace}
+      assert: eq(preedit, "ㄱ")
+    - send: omgui{BackSpace}{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
+    - send: omguin{BackSpace}
+      assert: eq(preedit, "긔")
+    - send: omgwa{BackSpace}e
+      assert: eq(preedit, "괴")
+    - send: omgwo{BackSpace}i
+      assert: eq(preedit, "긔")
+    - send: omwa{BackSpace}
+      assert: eq(preedit, "ㅗ")
+    - send: omwa{BackSpace}{BackSpace}
+      assert: eq(preedit, "om〔문경〕")
