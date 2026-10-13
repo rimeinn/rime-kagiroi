@@ -48,6 +48,23 @@ deploy:
         assert: preedit == "かぎろい"
       - send: 'kagiroi{Left}{Left}{Left}{BackSpace}'
         assert: preedit == "ぎろい"
+
+      # UTF-8 editing stays active inside Japanese segments.
+      - send: kana{BackSpace}
+        assert: preedit == "か"
+      - send: kana{BackSpace}{BackSpace}
+        assert: preedit == nil
+      - send: kana{Left}{BackSpace}
+        assert: preedit == "な"
+      - send: kana{Home}{Delete}
+        assert: preedit == "な"
+      - send: kana{Home}{Right}{Delete}
+        assert: preedit == "か"
+      - send: kana{Left}{Right}{BackSpace}
+        assert: preedit == "か"
+      - send: kana{BackSpace}ki
+        assert: preedit == "かき"
+
   katakana:
     tests:
       - send: 'aida{Control+i}'
